@@ -1293,8 +1293,8 @@ class _MypostSellerviewState extends State<MypostSellerview> {
   Widget _buildTradeHeader() {
     String header = "View Screen";
     header = enquiry['type'] == 'Kernel'
-        ? "${enquiry['grade']} Kernel"
-        : "${enquiry['yearofcrop'] ?? ''} RCN";
+        ? "${enquiry['grade']} ${Translate.t("filter.kernel")}"
+        : "${enquiry['yearofcrop'] ?? ''} ${Translate.t("filter.rcn")}";
     // loadUsers(enquiry['viewed'] ?? []);
     return TradeHeader(
       onviewers: () {
@@ -1376,8 +1376,8 @@ class _MypostSellerviewState extends State<MypostSellerview> {
         ),
         origin: _getString(""),
         productType: enquiry['type'] == 'Kernel'
-            ? "${_getString(enquiry['grade'], defaultValue: '')} Kernel"
-            : 'RCN (${_getString(enquiry['yearofcrop'], defaultValue: '')})',
+            ? "${_getString(enquiry['grade'], defaultValue: '')} ${Translate.t("filter.kernel")}"
+            : '${Translate.t("filter.rcn")} (${_getString(enquiry['yearofcrop'], defaultValue: '')})',
         requiredQty: _getString(formatToKg(available)),
         description: _getString(enquiry['description']),
         budgetPrice: _getString(

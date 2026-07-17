@@ -95,13 +95,21 @@ class _NewPostScreen extends State<NewPostScreen> {
   List<String> countries = ["India", "Vietnam", "Brazil"];
   List<String> origins = [];
   List<String> grades = [
-    "W180",
-    "W240",
-    "W320",
-    "W450",
-    "W500",
-    "Broken BB",
-    "Broken LP",
+    "Grade A",
+    "Grade B",
+    "Premium",
+    "Regular",
+    "Organic",
+    "Alphonso Mango",
+    "Kesar Mango",
+    "Shimla Apple",
+    "Kashmir Apple",
+    "Cavendish Banana",
+    "Nagpur Orange",
+    "Thompson Grapes",
+    "W180 Cashew",
+    "W240 Cashew",
+    "W320 Cashew",
   ];
   List<String> sale = ["Domestic", "International", "High Sea"];
   List<String> shipmentsaleTypes = ["CIF", "FOB"];
@@ -356,39 +364,39 @@ class _NewPostScreen extends State<NewPostScreen> {
     final numericValue = int.tryParse(digitsOnly) ?? 0;
 
     if (fieldName == 'moistureContent') {
-      if (digitsOnly.length > 2) {
+      if (digitsOnly.length > 3) {
         controller.text = value.substring(0, value.length - 1);
         return;
       }
       setState(() {
-        moistureError = numericValue > 20
-            ? Translate.t("errors.moisture_less_than")
+        moistureError = numericValue > 100
+            ? "Moisture must be less than 100%"
             : '';
       });
       return;
     }
 
     if (fieldName == 'nutCount') {
-      if (digitsOnly.length > 3) {
+      if (digitsOnly.length > 4) {
         controller.text = value.substring(0, value.length - 1);
         return;
       }
       setState(() {
-        nutCountError = (numericValue < 140 || numericValue > 260)
-            ? Translate.t("errors.nut_count_range")
+        nutCountError = (numericValue < 1 || numericValue > 9999)
+            ? "Size / Count must be between 1 and 9999"
             : '';
       });
       return;
     }
 
     if (fieldName == 'outTurn') {
-      if (digitsOnly.length > 2) {
+      if (digitsOnly.length > 3) {
         controller.text = value.substring(0, value.length - 1);
         return;
       }
       setState(() {
-        outTurnError = (numericValue < 22 || numericValue > 60)
-            ? Translate.t("errors.outturn_range")
+        outTurnError = (numericValue < 1 || numericValue > 100)
+            ? "Yield / Out Turn must be 1 - 100%"
             : '';
       });
       return;
@@ -2055,7 +2063,7 @@ class _NewPostScreen extends State<NewPostScreen> {
                                   CustomTextFormField(
                                     controller: nutCountController,
                                     label: Translate.t("post.nut_count"),
-                                    hintText: "140 - 260",
+                                    hintText: "Enter size or piece count (e.g. 50)",
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => handleNumericInput(
                                       nutCountController,
@@ -2070,7 +2078,7 @@ class _NewPostScreen extends State<NewPostScreen> {
                                   CustomTextFormField(
                                     controller: outTurnController,
                                     label: Translate.t("post.out_turn"),
-                                    hintText: "22 - 60",
+                                    hintText: "Enter yield percentage (e.g. 80)",
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => handleNumericInput(
                                       outTurnController,

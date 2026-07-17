@@ -54,17 +54,13 @@ class AppColors {
   //     market stats, analytics, progress indicators, brand elements
   //
   // ═══════════════════════════════════════════════════════════════════════════
-  static Color appheader = Color.fromARGB(255, 121, 79, 2);
+  static Color appheader = Color(0xFF1E5E42);
   static Color appheadertext = Color(0xFFFFFFFF);
-  // static Color primary = Color(0xFF5B6F1D);
-  // static Color primaryDark = Color(0xFF445414);
-  // static Color primaryLight = Color(0xFF7C9440);
-  // static Color primarySoft = Color(0xFFEAF0D8);
 
-  static Color primary = Color.fromARGB(255, 220, 153, 29);
-  static Color primaryDark = Color.fromARGB(255, 190, 123, 15);
-  static Color primaryLight = Color(0xFFE8C36D);
-  static Color primarySoft = Color(0xFFF9F1DD); // subtle green bg
+  static Color primary = Color(0xFF1E5E42); // Forest Green
+  static Color primaryDark = Color(0xFF0F3A27);
+  static Color primaryLight = Color(0xFF2E8B57);
+  static Color primarySoft = Color(0xFFE8F5E9); // Mint green bg
 
   // static const Color primary = Color(0xFF6A3512);
   // static const Color primaryDark = Color(0xFF4A240B);
@@ -82,10 +78,10 @@ class AppColors {
   //
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static Color secondary = Color(0xFF5B6F1D);
-  static Color secondaryDark = Color(0xFF445414);
-  static Color secondaryLight = Color(0xFF7C9440);
-  static Color secondarySoft = Color(0xFFEAF0D8);
+  static Color secondary = Color(0xFFE65100); // Tangerine Orange
+  static Color secondaryDark = Color(0xFFBF360C);
+  static Color secondaryLight = Color(0xFFFF7043);
+  static Color secondarySoft = Color(0xFFFBE9E7); // Peach bg
 
   // static Color secondary = Color(0xFF6A3512);
   // static Color secondaryDark = Color(0xFF4A240B);
@@ -101,10 +97,10 @@ class AppColors {
   //
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static Color gold = Color(0xFFD9A441);
-  static Color goldDark = Color(0xFFB88423);
-  static Color goldLight = Color(0xFFE8C36D);
-  static Color goldSoft = Color(0xFFF9F1DD); // subtle gold bg
+  static Color gold = Color(0xFFFFB300); // Gold
+  static Color goldDark = Color(0xFFFF8F00);
+  static Color goldLight = Color(0xFFFFD54F);
+  static Color goldSoft = Color(0xFFFFF8E1); // Light gold bg
 
   // ═══════════════════════════════════════════════════════════════════════════
   //
@@ -112,9 +108,9 @@ class AppColors {
   //
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static Color background = Color(0xFFF8F5EF);
-  static Color backgroundSecondary = Color(0xFFF3EEE4);
-  static Color backgroundTertiary = Color(0xFFECE5D8);
+  static Color background = Color(0xFFF8F9FA); // Clean off-white bg
+  static Color backgroundSecondary = Color(0xFFF1F3F4);
+  static Color backgroundTertiary = Color(0xFFE8EAED);
 
   // ═══════════════════════════════════════════════════════════════════════════
   //
@@ -122,9 +118,9 @@ class AppColors {
   //
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static Color activebottom = Color.fromARGB(255, 152, 103, 5);
+  static Color activebottom = Color(0xFF1E5E42); // Active bottom tab indicator
   static Color surface = Color(0xFFFFFFFF);
-  static Color surfaceVariant = Color(0xFFF9F8F5);
+  static Color surfaceVariant = Color(0xFFF8F9FA);
 
   // Dark mode surfaces
   static Color surfaceDark = Color(0xFF1C1410);
@@ -160,12 +156,12 @@ class AppColors {
   //
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static Color border = Color(0xFFE3DED2);
-  static Color borderLight = Color(0xFFEEE9DF);
-  static Color borderDark = Color(0xFFD0C7B7);
-  static Color borderLighter = Color.fromARGB(213, 238, 233, 223);
-  static Color borderDarker = Color.fromARGB(255, 180, 172, 158);
-  static Color divider = Color(0xFFE6E1D7);
+  static Color border = Color(0xFFE0E0E0);
+  static Color borderLight = Color(0xFFEEEEEE);
+  static Color borderDark = Color(0xFFBDBDBD);
+  static Color borderLighter = Color(0xFFF5F5F5);
+  static Color borderDarker = Color(0xFF9E9E9E);
+  static Color divider = Color(0xFFE0E0E0);
 
   // Dark mode borders
   static Color borderDarkMode = Color(0xFF3D2A1A);
@@ -197,40 +193,40 @@ class AppColors {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // — Stock Listings (available = green) —
-  static Color stockAvailable = Color(0xFF4E7A22);
-  static Color stockAvailableBg = Color(0xFFE8F5DC);
+  static Color stockAvailable = Color(0xFF2E7D32);
+  static Color stockAvailableBg = Color(0xFFE8F5E9);
 
-  // — Requirements (brown = commerce action) —
-  static Color requirement = Color(0xFF6A3512);
-  static Color requirementBg = Color(0xFFF4E7DE);
+  // — Requirements (orange = commerce action) —
+  static Color requirement = Color(0xFFE65100);
+  static Color requirementBg = Color(0xFFFBE9E7);
 
   // — Featured (gold) —
-  static Color featured = Color(0xFFD9A441);
-  static Color featuredBg = Color(0xFFF9F1DD);
+  static Color featured = Color(0xFFFFB300);
+  static Color featuredBg = Color(0xFFFFF8E1);
 
   // — Verified (emerald = trust) —
-  static Color verified = Color(0xFF2F8F63);
-  static Color verifiedBg = Color(0xFFE3F6ED);
+  static Color verified = Color(0xFF2E7D32);
+  static Color verifiedBg = Color(0xFFE8F5E9);
 
   // — Urgent / Expiring (red warning) —
-  static Color urgent = Color(0xFFB4442C);
-  static Color urgentBg = Color(0xFFFDE6E2);
+  static Color urgent = Color(0xFFD84315);
+  static Color urgentBg = Color(0xFFFFEBE7);
 
   // — Seller cards —
-  static Color sellerCardBg = Color(0xFFF5F7EF);
-  static Color sellerCardBorder = Color(0xFFCDD8A4);
-  static Color sellerCardAccent = Color(0xFF5B6F1D);
+  static Color sellerCardBg = Color(0xFFE8F5E9); // Mint green bg
+  static Color sellerCardBorder = Color(0xFFC8E6C9);
+  static Color sellerCardAccent = Color(0xFF1E5E42);
 
   // — Buyer cards —
-  static Color buyerCardBg = Color.fromARGB(255, 244, 236, 224);
-  static Color buyerCardBorder = Color(0xFFD8BCA8);
-  static Color buyerCardAccent = Color(0xFF6A3512);
+  static Color buyerCardBg = Color(0xFFFBE9E7); // Peach bg
+  static Color buyerCardBorder = Color(0xFFFFCCBC);
+  static Color buyerCardAccent = Color(0xFFE65100);
 
   // — Role colors —
-  static Color buyerColor = Color(0xFF6A3512); // Brown
-  static Color merchantColor = Color(0xFF5B6F1D); // Green
-  static Color rcnColor = Color(0xFF4A7C6F); // Muted teal
-  static Color kernelColor = Color(0xFF7A6B3C); // Golden brown
+  static Color buyerColor = Color(0xFFE65100); // Tangerine orange
+  static Color merchantColor = Color(0xFF1E5E42); // Forest green
+  static Color rcnColor = Color(0xFF2E8B57); // Fresh fruits accent
+  static Color kernelColor = Color(0xFF8C6D31); // Dry fruits accent
 
   // ═══════════════════════════════════════════════════════════════════════════
   //
@@ -240,30 +236,30 @@ class AppColors {
   //
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Primary CTA — Brown gradient (Login, Buy, Sell, Submit, Save, FAB)
+  /// Primary CTA — Orange gradient (Login, Buy, Sell, Submit, Save, FAB)
   static LinearGradient primaryButtonGradient = LinearGradient(
-    colors: [Color(0xFF6A3512), Color(0xFF8C5A3C)],
+    colors: [Color(0xFFE65100), Color(0xFFFF7043)],
   );
 
   /// Secondary CTA — Green gradient (secondary actions)
   static LinearGradient secondaryButtonGradient = LinearGradient(
-    colors: [Color(0xFF5B6F1D), Color(0xFF7C9440)],
+    colors: [Color(0xFF1E5E42), Color(0xFF2E8B57)],
   );
 
   /// Premium CTA — Gold gradient (upgrade, featured, premium)
   static LinearGradient premiumButtonGradient = LinearGradient(
-    colors: [Color(0xFFD9A441), Color(0xFFE8C36D)],
+    colors: [Color(0xFFFFB300), Color(0xFFFFD54F)],
   );
 
   // Flat button colors (for non-gradient use)
-  static Color button = Color(0xFF6A3512); // Brown CTA
-  static Color buttonDark = Color(0xFF4A240B);
-  static Color buttonLight = Color(0xFF8C5A3C);
+  static Color button = Color(0xFFE65100); // Tangerine CTA
+  static Color buttonDark = Color(0xFFBF360C);
+  static Color buttonLight = Color(0xFFFF7043);
   static Color buttonText = Color(0xFFFFFFFF);
-  static Color buttonOutlineBorder = Color(0xFF6A3512);
-  static Color buttonOutlineText = Color(0xFF6A3512);
-  static Color buttonDisabled = Color(0xFFD5CFC5);
-  static Color buttonDisabledText = Color(0xFFA3A3A3);
+  static Color buttonOutlineBorder = Color(0xFFE65100);
+  static Color buttonOutlineText = Color(0xFFE65100);
+  static Color buttonDisabled = Color(0xFFE0E0E0);
+  static Color buttonDisabledText = Color(0xFF9E9E9E);
 
   // ═══════════════════════════════════════════════════════════════════════════
   //
@@ -275,31 +271,31 @@ class AppColors {
   static LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF445414), Color(0xFF5B6F1D)],
+    colors: [Color(0xFF0F3A27), Color(0xFF1E5E42)],
   );
 
   /// Market analytics cards
   static LinearGradient analyticsGradient = LinearGradient(
-    colors: [Color(0xFF5B6F1D), Color(0xFF7C9440)],
+    colors: [Color(0xFF1E5E42), Color(0xFF2E8B57)],
   );
 
   /// Premium membership banner
   static LinearGradient premiumGradient = LinearGradient(
-    colors: [Color(0xFFD9A441), Color(0xFFE8C36D)],
+    colors: [Color(0xFFFFB300), Color(0xFFFFD54F)],
   );
 
   /// Header/AppBar gradient
   static LinearGradient headerGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF445414), Color(0xFF7C9440)],
+    colors: [Color(0xFF0F3A27), Color(0xFF1E5E42)],
   );
 
   /// Background fade (green → cream)
   static LinearGradient backgroundGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF5B6F1D), Color(0xFFF8F5EF)],
+    colors: [Color(0xFF1E5E42), Color(0xFFF8F9FA)],
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -311,22 +307,22 @@ class AppColors {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static Color navBackground = Color(0xFFFFFFFF); // Footer/bottom nav bg
-  static Color navSelected = Color(0xFF5B6F1D); // Active — Green
+  static Color navSelected = Color(0xFF1E5E42); // Active — Green
   static Color navUnselected = Color(0xFF8E8E8E); // Inactive
-  static Color navIndicator = Color(0xFFEAF0D8); // Active item bg pill
+  static Color navIndicator = Color(0xFFE8F5E9); // Active item bg pill
 
   // AppBar specific
-  static Color navBg = Color(0xFF5B6F1D); // Green AppBar
-  static Color navBgDark = Color(0xFF445414); // Darker green on scroll
+  static Color navBg = Color(0xFF1E5E42); // Green AppBar
+  static Color navBgDark = Color(0xFF0F3A27); // Darker green on scroll
   static Color navText = Color(0xFFFFFFFF); // White text on nav
-  static Color navActiveIcon = Color(0xFF5B6F1D); // Active bottom nav icon
+  static Color navActiveIcon = Color(0xFF1E5E42); // Active bottom nav icon
   static Color navInactiveIcon = Color(0xFF8E8E8E);
 
   // Header
-  static Color headerBg = Color(0xFF5B6F1D);
+  static Color headerBg = Color(0xFF1E5E42);
   static Color footerBg = Color(0xFFFFFFFF);
-  static Color sectionHeader = Color(0xFF5B6F1D);
-  static Color tabIndicator = Color(0xFFD9A441); // Gold tab indicator
+  static Color sectionHeader = Color(0xFF1E5E42);
+  static Color tabIndicator = Color(0xFFFFB300); // Gold tab indicator
 
   // ═══════════════════════════════════════════════════════════════════════════
   //
@@ -336,10 +332,10 @@ class AppColors {
   //
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static Color inputBackground = Color(0xFFF9F6F1);
-  static Color inputBorder = Color(0xFFD8D1C5);
-  static Color inputFocusedBorder = Color(0xFF5B6F1D); // Green focus
-  static Color inputErrorBorder = Color(0xFFB4442C);
+  static Color inputBackground = Color(0xFFF5F7F8);
+  static Color inputBorder = Color(0xFFE0E0E0);
+  static Color inputFocusedBorder = Color(0xFF1E5E42); // Green focus
+  static Color inputErrorBorder = Color(0xFFD84315);
 
   // ═══════════════════════════════════════════════════════════════════════════
   //
@@ -368,28 +364,28 @@ class AppColors {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // Primary aliases (→ Green)
-  static Color primaryDarkAlias = Color(0xFF445414);
-  static Color primaryLightAlias = Color(0xFF7C9440);
-  static Color primarySubtle = Color(0xFFEAF0D8);
+  static Color primaryDarkAlias = Color(0xFF0F3A27);
+  static Color primaryLightAlias = Color(0xFF2E8B57);
+  static Color primarySubtle = Color(0xFFE8F5E9);
 
-  // Secondary aliases (→ Brown, used as button/CTA)
-  static Color secondaryDarkAlias = Color(0xFF4A240B);
-  static Color secondaryLightAlias = Color(0xFF8C5A3C);
-  static Color secondarySubtle = Color(0xFFF1E5DD);
+  // Secondary aliases (→ Orange)
+  static Color secondaryDarkAlias = Color(0xFFBF360C);
+  static Color secondaryLightAlias = Color(0xFFFF7043);
+  static Color secondarySubtle = Color(0xFFFBE9E7);
 
   // Accent (→ Gold)
-  static Color accent = Color(0xFF6A3512);
-  static Color accentLight = Color(0xFF4A240B);
-  static Color accentDark = Color(0xFF4A240B);
-  static Color accentSubtle = Color(0xFF4A240B);
+  static Color accent = Color(0xFFE65100);
+  static Color accentLight = Color(0xFFFF7043);
+  static Color accentDark = Color(0xFFBF360C);
+  static Color accentSubtle = Color(0xFFFBE9E7);
 
   // Background aliases
-  static Color backgroundLight = Color(0xFFF8F5EF);
+  static Color backgroundLight = Color(0xFFF8F9FA);
   static Color backgroundDark = Color(0xFFECE5D8);
 
   // Surface aliases
   static Color surfaceLight = Color(0xFFFFFFFF);
-  static Color surfaceContainerLight = Color(0xFFF9F8F5);
+  static Color surfaceContainerLight = Color(0xFFF8F9FA);
 
   // Text aliases
   static Color textPrimaryLight = Color(0xFF1F1F1F);
@@ -398,34 +394,34 @@ class AppColors {
   static Color textHintLight = Color(0xFFA3A3A3);
 
   // Border aliases
-  static Color dividerAlias = Color(0xFFE6E1D7);
+  static Color dividerAlias = Color(0xFFE0E0E0);
 
   // Semantic
-  static Color disabled = Color(0xFFD5CFC5);
+  static Color disabled = Color(0xFFE0E0E0);
 
   // Card aliases
   static Color cardBg = Color(0xFFFFFFFF);
-  static Color cardBorder = Color(0xFFE3DED2);
-  static Color cardShadow = Color.fromRGBO(0, 0, 0, 0.06);
+  static Color cardBorder = Color(0xFFEEEEEE);
+  static Color cardShadow = Color.fromRGBO(0, 0, 0, 0.04);
 
   // Extended palette for widget use
-  static Color olive = Color(0xFF5B6F1D);
-  static Color oliveLight = Color(0xFF7C9440);
-  static Color oliveDark = Color(0xFF445414);
-  static Color oliveSubtle = Color(0xFFEAF0D8);
+  static Color olive = Color(0xFF1E5E42);
+  static Color oliveLight = Color(0xFF2E8B57);
+  static Color oliveDark = Color(0xFF0F3A27);
+  static Color oliveSubtle = Color(0xFFE8F5E9);
 
-  static Color brown = Color(0xFF6A3512);
-  static Color brownLight = Color(0xFF8C5A3C);
-  static Color brownDark = Color(0xFF4A240B);
-  static Color brownSubtle = Color(0xFFF1E5DD);
+  static Color brown = Color(0xFFE65100);
+  static Color brownLight = Color(0xFFFF7043);
+  static Color brownDark = Color(0xFFBF360C);
+  static Color brownSubtle = Color(0xFFFBE9E7);
 
-  static Color cream = Color(0xFFF8F5EF);
-  static Color creamDark = Color(0xFFECE5D8);
-  static Color creamLight = Color(0xFFFFFBF6);
+  static Color cream = Color(0xFFF8F9FA);
+  static Color creamDark = Color(0xFFE8EAED);
+  static Color creamLight = Color(0xFFFFFFFF);
 
-  static Color beige = Color(0xFFE3DED2);
-  static Color beigeLight = Color(0xFFEEE9DF);
-  static Color beigeDark = Color(0xFFD0C7B7);
+  static Color beige = Color(0xFFE0E0E0);
+  static Color beigeLight = Color(0xFFEEEEEE);
+  static Color beigeDark = Color(0xFFBDBDBD);
 
   // Gradient backward-compat aliases
   static LinearGradient primaryGradient = headerGradient; // green hero
@@ -434,20 +430,20 @@ class AppColors {
   static LinearGradient accentGradient = premiumGradient; // gold premium
 
   // Product type colors
-  static Color RCN = Color(0xFF4A7C6F);
-  static Color Kernel = Color(0xFF7C9440);
+  static Color RCN = Color(0xFF2E8B57); // Fresh fruits accent
+  static Color Kernel = Color(0xFF8C6D31); // Dry fruits accent
 
   // Card-type accent maps (used by card widgets)
   static Color sellerCardText = Color(0xFF1F1F1F);
   static Color buyerCardText = Color(0xFF1F1F1F);
-  static Color rcnCardBg = Color(0xFFF2F7F5);
-  static Color rcnCardBorder = Color(0xFFC2D8CF);
-  static Color rcnCardAccent = Color(0xFF4A7C6F);
-  static Color rcnCardText = Color(0xFF1A2E28);
-  static Color kernelCardBg = Color(0xFFEFF3E2);
-  static Color kernelCardBorder = Color(0xFFCDD8A4);
-  static Color kernelCardAccent = Color(0xFF7C9440);
-  static Color kernelCardText = Color(0xFF1E2A14);
+  static Color rcnCardBg = Color(0xFFE8F5E9); // Mint green bg
+  static Color rcnCardBorder = Color(0xFFC8E6C9);
+  static Color rcnCardAccent = Color(0xFF1E5E42);
+  static Color rcnCardText = Color(0xFF0F3A27);
+  static Color kernelCardBg = Color(0xFFFFF8E1); // Light yellow/orange bg
+  static Color kernelCardBorder = Color(0xFFFFE082);
+  static Color kernelCardAccent = Color(0xFFE65100);
+  static Color kernelCardText = Color(0xFF5D4037);
 
   // ─────────────────────────────────────────────────────────────────────────
   // API UPDATE

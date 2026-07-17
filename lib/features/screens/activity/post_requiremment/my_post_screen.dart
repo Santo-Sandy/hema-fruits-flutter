@@ -687,25 +687,25 @@ class _MyPostAndResponse extends State<MyPostAndResponse> {
     if (isbothtype && isbothpost) {
       options.addAll([
         {
-          'label': 'RCN - Sale',
+          'label': '${Translate.t("filter.rcn")} - Sale',
           'role': 'processor',
           'type': 'RCN',
           'icon': Icons.sell,
         },
         {
-          'label': 'Kernel - Sale',
+          'label': '${Translate.t("filter.kernel")} - Sale',
           'role': 'processor',
           'type': 'Kernel',
           'icon': Icons.sell_outlined,
         },
         {
-          'label': 'RCN - Purchase',
+          'label': '${Translate.t("filter.rcn")} - Purchase',
           'role': 'buyer',
           'type': 'RCN',
           'icon': Icons.shopping_bag,
         },
         {
-          'label': 'Kernel - Purchase',
+          'label': '${Translate.t("filter.kernel")} - Purchase',
           'role': 'buyer',
           'type': 'Kernel',
           'icon': Icons.shopping_cart_outlined,

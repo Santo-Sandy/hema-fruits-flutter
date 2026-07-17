@@ -758,7 +758,7 @@ class _OverviewSectionState extends State<OverviewSection> {
                         width: 130,
                         child: ProfileTabSwitcher(
                           backgroundColor: AppColors.textHint,
-                          tabs: ['RCN', 'Kernel'],
+                          tabs: [Translate.t('filter.rcn'), Translate.t('filter.kernel')],
                           selectedIndex: widget.selectedCategory == 'RCN'
                               ? 0
                               : 1,
@@ -1136,7 +1136,7 @@ class RecentActionsSection extends StatelessWidget {
     if (item["type"] == "Kernel") {
       return "${item["grade"] ?? "-"} - $qty";
     } else {
-      return "${item["yearOfCrop"] ?? item["yearofcrop"] ?? "-"} RCN - $qty";
+      return "${item["yearOfCrop"] ?? item["yearofcrop"] ?? "-"} ${Translate.t('filter.rcn')} - $qty";
     }
   }
 
@@ -1242,9 +1242,7 @@ class RecentActionsSection extends StatelessWidget {
                   ? AppAssets.iconKernel
                   : AppAssets.iconRcn,
               iconBackground: AppColors.primarySubtle,
-              title: item["type"] == "Kernel"
-                  ? "Kernel Stock Posted"
-                  : "RCN Requirement Posted",
+              title: "${item['type'] == 'Kernel' ? Translate.t('filter.kernel') : Translate.t('filter.rcn')} ${item['post_type'] == 'stocks' ? 'Stock Posted' : 'Requirement Posted'}",
               subtitle: buildSubtitle(item),
               timeAgo: timeAgo(item["created_on"]),
               iconColor: AppColors.primary,

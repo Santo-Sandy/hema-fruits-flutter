@@ -123,7 +123,7 @@ class _MyAppState extends State<MyApp> {
         builder: (_, currentUserRole, __) {
           return NotificationContextWrapper(
             child: MaterialApp.router(
-              title: 'RCN & Kernel Marketplace',
+              title: 'Hema Fruits Marketplace',
               routerConfig: appRouter,
               theme: AppTheme.light,
 

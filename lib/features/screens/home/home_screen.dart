@@ -1306,7 +1306,7 @@ class _HomeScreen extends State<HomeScreen>
                           label: "Product Type",
                           value: selectedFilter,
                           items: productTypes,
-                          labels: productTypes,
+                          labels: productTypes.map((t) => t == "RCN" ? Translate.t("filter.rcn") : (t == "Kernel" ? Translate.t("filter.kernel") : t)).toList(),
                           onChanged: (val) async {
                             setState(() {
                               selectedFilter = val ?? "All Listings";
@@ -2015,7 +2015,7 @@ class _PostviewState extends State<Postview>
           '${isMerchantPost ? widget.item["merchantname"] : widget.item["user_name"]}',
       company: '',
       title:
-          "${widget.item['type'] == 'Kernel' ? widget.item['grade'] : widget.item['yearOfCrop'] ?? widget.item['yearofcrop']} ${widget.item['type']} - ${widget.item['origin']}",
+          "${widget.item['type'] == 'Kernel' ? widget.item['grade'] ?? '' : widget.item['yearOfCrop'] ?? widget.item['yearofcrop'] ?? ''} ${widget.item['type'] == 'Kernel' ? Translate.t('filter.kernel') : Translate.t('filter.rcn')} - ${widget.item['origin'] ?? ''}",
       quantity: isMerchantPost
           ? formatToKg(widget.item['availableqty'] ?? 0)
           : formatToKg(widget.item['requiredqty'] ?? 0),

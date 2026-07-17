@@ -41,7 +41,7 @@ class AppTheme {
         backgroundColor: AppColors.button, // Light Brown
         foregroundColor: AppColors.buttonText,
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         textStyle: const TextStyle(
           fontFamily: 'Poppins',
           fontWeight: FontWeight.w600,
@@ -57,7 +57,7 @@ class AppTheme {
         backgroundColor: AppColors.button, // Light Brown
         foregroundColor: AppColors.buttonText,
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         textStyle: const TextStyle(
           fontFamily: 'Poppins',
           fontWeight: FontWeight.w600,
@@ -73,7 +73,7 @@ class AppTheme {
         foregroundColor: AppColors.buttonOutlineText, // Light Brown
         side: BorderSide(color: AppColors.buttonOutlineBorder, width: 1.5),
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         textStyle: const TextStyle(
           fontFamily: 'Poppins',
           fontWeight: FontWeight.w600,
@@ -99,7 +99,7 @@ class AppTheme {
       backgroundColor: AppColors.button, // Light Brown
       foregroundColor: AppColors.buttonText,
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     ),
 
     // ── Input Decoration — Olive Green focus ──
@@ -108,26 +108,26 @@ class AppTheme {
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         borderSide: BorderSide(color: AppColors.inputBorder),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         borderSide: BorderSide(color: AppColors.inputBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         borderSide: BorderSide(
           color: AppColors.inputFocusedBorder,
           width: 2,
         ), // Olive Green
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         borderSide: BorderSide(color: AppColors.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         borderSide: BorderSide(color: AppColors.error, width: 2),
       ),
       hintStyle: TextStyle(
@@ -163,7 +163,7 @@ class AppTheme {
       color: AppColors.surface,
       shadowColor: AppColors.shadowLight,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         side: BorderSide(color: AppColors.cardBorder, width: 1),
       ),
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -180,7 +180,7 @@ class AppTheme {
         fontFamily: 'Poppins',
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     ),
 
     // ── Bottom Navigation — Beige bg, Olive Green active ──
@@ -303,7 +303,7 @@ class AppTheme {
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surface,
       elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       titleTextStyle: TextStyle(
         fontFamily: 'Poppins',
         fontWeight: FontWeight.w700,
@@ -322,7 +322,7 @@ class AppTheme {
       backgroundColor: AppColors.surface,
       elevation: 8,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
     ),
 
@@ -331,7 +331,7 @@ class AppTheme {
       backgroundColor: AppColors.surface,
       scrimColor: AppColors.overlay.withValues(alpha: 0.5),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(16)),
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
       ),
     ),
 

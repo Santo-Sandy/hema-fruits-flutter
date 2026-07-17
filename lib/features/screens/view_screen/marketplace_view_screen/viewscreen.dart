@@ -1141,7 +1141,7 @@ class _ViewScreenState extends State<ViewScreen> {
         '${item['flag'] ?? ''}  ${item['origin']}',
       ),
       productType:
-          'RCN (${PostViewUtils.getString(item['yearofcrop'], fallback: '')})',
+          '${Translate.t("filter.rcn")} (${PostViewUtils.getString(item['yearofcrop'], fallback: '')})',
       requiredQty: PostViewUtils.getString(_formatToKg(available)),
       description: PostViewUtils.getString(item['description']),
       budgetPrice: PostViewUtils.getString(

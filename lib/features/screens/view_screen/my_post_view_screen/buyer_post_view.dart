@@ -853,8 +853,8 @@ class _BuyerPostViewState extends State<BuyerPostView> {
 
   Widget _buildTradeHeader(PostProvider provider, String id) {
     final label = item['type'] == 'Kernel'
-        ? '${item['grade']} Kernel'
-        : 'RCN (${item['yearOfCrop']})';
+        ? '${item['grade']} ${Translate.t("filter.kernel")}'
+        : '${Translate.t("filter.rcn")} (${item['yearOfCrop']})';
     // loadUsers(item['viewed'] ?? []);
     return TradeHeader(
       onviewers: () {
@@ -933,7 +933,7 @@ class _BuyerPostViewState extends State<BuyerPostView> {
         '${item['flag'] ?? ''}  ${item['origin']}',
       ),
       productType:
-          'RCN (${PostViewUtils.getString(item['yearOfCrop'], fallback: '')})',
+          '${Translate.t("filter.rcn")} (${PostViewUtils.getString(item['yearOfCrop'], fallback: '')})',
       requiredQty: PostViewUtils.getString(_formatToKg(available)),
       description: PostViewUtils.getString(item['description']),
       budgetPrice: PostViewUtils.getString(

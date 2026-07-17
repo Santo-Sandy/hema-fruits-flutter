@@ -1024,8 +1024,8 @@ class _SellerPostViewState extends State<SellerPostView> {
 
   Widget _buildTradeHeader(PostProvider provider, String id) {
     final label = enquiry['type'] == 'Kernel'
-        ? '${enquiry['grade']} Kernel'
-        : '${enquiry['yearofcrop'] ?? ''} RCN';
+        ? '${enquiry['grade']} ${Translate.t("filter.kernel")}'
+        : '${enquiry['yearofcrop'] ?? ''} ${Translate.t("filter.rcn")}';
 
     return TradeHeader(
       onviewers: () {
@@ -1095,8 +1095,8 @@ class _SellerPostViewState extends State<SellerPostView> {
     }
 
     final productType = enquiry['type'] == 'Kernel'
-        ? '${PostViewUtils.getString(enquiry['grade'], fallback: '')} Kernel'
-        : ' RCN (${PostViewUtils.getString(enquiry['yearofcrop'], fallback: '')})';
+        ? '${PostViewUtils.getString(enquiry['grade'], fallback: '')} ${Translate.t("filter.kernel")}'
+        : '${Translate.t("filter.rcn")} (${PostViewUtils.getString(enquiry['yearofcrop'], fallback: '')})';
 
     return PostMainHeaderCard(
       shipmentmethod: enquiry['shippingmethod'] ?? "",

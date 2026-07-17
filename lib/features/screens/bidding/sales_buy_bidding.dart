@@ -589,7 +589,7 @@ class _SalesBuyBiddingState extends State<SalesBuyBidding> {
                     border: Border.all(color: AppColors.primary, width: 1),
                   ),
                   child: Text(
-                    type ?? "",
+                    type == "RCN" ? Translate.t("filter.rcn") : (type == "Kernel" ? Translate.t("filter.kernel") : (type ?? "")),
                     style: AppTextThemes.getLightTextTheme.bodyMedium?.copyWith(
                       color: AppColors.primary,
                     ),
@@ -607,7 +607,7 @@ class _SalesBuyBiddingState extends State<SalesBuyBidding> {
               label: Translate.t("button.select"),
               value: selectedFilter,
               items: productTypes,
-              labels: productTypes,
+              labels: productTypes.map((t) => t == "RCN" ? Translate.t("filter.rcn") : (t == "Kernel" ? Translate.t("filter.kernel") : t)).toList(),
               onChanged: (value) async {
                 if (value != null) {
                   _updateFilter(value);
@@ -908,7 +908,7 @@ class _SalesBuyBiddingState extends State<SalesBuyBidding> {
                     title:
                         "${post['grade'] == 'RCN' ? '' : post['grade'] ?? ''} "
                         "${post['yearOfCrop'] ?? post['yearofcrop'] ?? ''} "
-                        "${post['type']}",
+                        "${post['type'] == 'RCN' ? Translate.t('filter.rcn') : (post['type'] == 'Kernel' ? Translate.t('filter.kernel') : post['type'])}",
                     subtitle: post['origin'] ?? '',
                     closingIn: close ?? DateTime.now(),
                     qty: Formatters.formatToKg(

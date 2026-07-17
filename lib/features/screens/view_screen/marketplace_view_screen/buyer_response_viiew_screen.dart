@@ -1121,7 +1121,7 @@ class _BuyerResponseViiewScreenState extends State<BuyerResponseViiewScreen> {
         '${item['flag'] ?? ''}  ${item['origin'] ?? ""}',
       ),
       productType:
-          'RCN (${PostViewUtils.getString(item['yearofcrop'] ?? "", fallback: '')})',
+          '${Translate.t("filter.rcn")} (${PostViewUtils.getString(item['yearofcrop'] ?? "", fallback: '')})',
       requiredQty: PostViewUtils.getString(_formatToKg(available)),
       currency: getCurrencySymbol(item['currency'] ?? ""),
       description: PostViewUtils.getString(item['description'] ?? ""),

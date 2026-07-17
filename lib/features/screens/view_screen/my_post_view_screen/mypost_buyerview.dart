@@ -1275,8 +1275,8 @@ class _MypostBuyerview extends State<MypostBuyerview> {
   Widget _buildTradeHeader() {
     String header = "View Screen";
     header = item['type'] == 'Kernel'
-        ? "${item['grade']} Kernel"
-        : "${item['yearOfCrop']} RCN";
+        ? "${item['grade']} ${Translate.t("filter.kernel")}"
+        : "${item['yearOfCrop']} ${Translate.t("filter.rcn")}";
     // loadUsers(item['viewed'] ?? []);
     return TradeHeader(
       onviewers: () {
@@ -1353,7 +1353,7 @@ class _MypostBuyerview extends State<MypostBuyerview> {
         ),
         unit: item['priceunit'] ?? "Kg",
         origin: _getString('${item['flag'] ?? ""}  ${item['origin']}'),
-        productType: 'RCN(${_getString(item['yearOfCrop'], defaultValue: '')})',
+        productType: '${Translate.t("filter.rcn")}(${_getString(item['yearOfCrop'], defaultValue: '')})',
         requiredQty: _getString(formatToKg(available)),
         description: _getString(item['description']),
         currency: getCurrencySymbol(item['currency']),

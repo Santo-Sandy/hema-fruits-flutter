@@ -1292,8 +1292,8 @@ class _SellerResponseViewScreenState extends State<SellerResponseViewScreen> {
     }
 
     final productType = enquiry['type'] == 'Kernel'
-        ? '${PostViewUtils.getString(enquiry['grade'], fallback: '')} Kernel'
-        : 'RCN (${PostViewUtils.getString(enquiry['yearOfCrop'], fallback: '')})';
+        ? '${PostViewUtils.getString(enquiry['grade'], fallback: '')} ${Translate.t("filter.kernel")}'
+        : '${Translate.t("filter.rcn")} (${PostViewUtils.getString(enquiry['yearOfCrop'], fallback: '')})';
 
     return PostMainHeaderCard(
       shipmentmethod: enquiry['shippingmethod'] ?? "",

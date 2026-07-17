@@ -541,7 +541,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                     children: [
                                       Expanded(
                                         child: ProfileTabSwitcher(
-                                          tabs: ['RCN', 'Kernel'],
+                                          tabs: [Translate.t('filter.rcn'), Translate.t('filter.kernel')],
                                           selectedIndex: _selectedTab,
                                           onTabChanged: (i) {
                                             if (!mounted) return;
@@ -722,8 +722,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
         '';
     final origin = product['origin']?.toString() ?? '';
 
+    final displayType = type == 'RCN' ? Translate.t('filter.rcn') : (type == 'Kernel' ? Translate.t('filter.kernel') : type);
     final parts = [
-      if (grade.isNotEmpty) grade else type,
+      if (grade.isNotEmpty) grade else displayType,
       if (type == 'RCN') year else origin,
     ];
 
