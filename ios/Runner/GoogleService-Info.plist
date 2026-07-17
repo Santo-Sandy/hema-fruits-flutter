@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>492996321386-9mbgcr8ak38q65sacfotbel5u1kbqcjj.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.492996321386-9mbgcr8ak38q65sacfotbel5u1kbqcjj</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>492996321386-11s88j60het3bmh4hg4i0vc2btub4qju.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDzNWD9UNexPBDRhuPB1lJx0yn7DIlBDZM</string>
+	<key>GCM_SENDER_ID</key>
+	<string>492996321386</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.kajupro.marketapp</string>
+	<key>PROJECT_ID</key>
+	<string>kajupro-market-place</string>
+	<key>STORAGE_BUCKET</key>
+	<string>kajupro-market-place.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:492996321386:ios:a03295b412a4e505222a13</string>
+</dict>
+</plist>

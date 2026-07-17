@@ -1,0 +1,102 @@
+{
+  "project_info": {
+    "project_number": "492996321386",
+    "project_id": "kajupro-market-place",
+    "storage_bucket": "kajupro-market-place.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:492996321386:android:38ae680254b82bf0222a13",
+        "android_client_info": {
+          "package_name": "com.kajupro.marketapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "492996321386-17458gfbb0olltiga8l9olepa8a536fk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kajupro.marketapp",
+            "certificate_hash": "e7ab2f1e7697d4daf38f60d3093458c7162a650d"
+          }
+        },
+        {
+          "client_id": "492996321386-1r3piuff0k3ep4borap091baanpj0529.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kajupro.marketapp",
+            "certificate_hash": "a4dcee2ea0a3dc5bbecb238b8c09d1caf43916e4"
+          }
+        },
+        {
+          "client_id": "492996321386-7tpfjqqc1keqt8iida21d636llhmso4g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kajupro.marketapp",
+            "certificate_hash": "f51d712bb638f38e7b565c34c2865ae9b60742e4"
+          }
+        },
+        {
+          "client_id": "492996321386-ab7n5mmnoeu3cb4j04uqeqnasbktg3uh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kajupro.marketapp",
+            "certificate_hash": "48ff73c2f55d7ae3beefeb22ba274159bbe590d6"
+          }
+        },
+        {
+          "client_id": "492996321386-cgicu9t93nvoe6sndbvhco3c4k4c8g90.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kajupro.marketapp",
+            "certificate_hash": "68d9ed832e2d95038e647f982070185ab43f4ac0"
+          }
+        },
+        {
+          "client_id": "492996321386-d23sl9t46smond5sigmrfl0ds7ppe60s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kajupro.marketapp",
+            "certificate_hash": "f99568c3f1119d8431acd603293e1624f8ceec4c"
+          }
+        },
+        {
+          "client_id": "492996321386-qoirumvhh4vksm54ral9ao8ron4evjv0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kajupro.marketapp",
+            "certificate_hash": "dc73b036e07b63192ba5708ce86fab8837006a7c"
+          }
+        },
+        {
+          "client_id": "492996321386-ru426po08lsupknf94f86sfdnoqeo012.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCTRthX-nn8xYd_J9feAELpnb7fZRzNH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "492996321386-ru426po08lsupknf94f86sfdnoqeo012.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "492996321386-3aqvh5e8mogur2u81qto4e4hiidium5s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cashewMarketplace"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
