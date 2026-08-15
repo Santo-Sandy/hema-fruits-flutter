@@ -1,4 +1,4 @@
-import 'package:cashew_marketplace/core/utils/Responsive/responsivea_context.dart';
+import 'package:hema_fruits/core/utils/Responsive/responsivea_context.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_theme.dart';

@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cashew_marketplace/core/config/app_config.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
+import 'package:hema_fruits/core/config/app_config.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 enum AppButtonVariant { primary, outlined, ghost, danger, secondary }

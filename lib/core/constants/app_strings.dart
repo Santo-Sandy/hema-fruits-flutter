@@ -2,5 +2,5 @@ class AppStrings {
   AppStrings._();
 
   static const String imageApiBase =
-      "https://cerp.sgp1.digitaloceanspaces.com/";
+      "https://hemafruits.sgp1.digitaloceanspaces.com/";
 }

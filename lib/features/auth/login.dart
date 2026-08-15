@@ -1,15 +1,15 @@
-import 'package:cashew_marketplace/core/constants/app_assets.dart';
-import 'package:cashew_marketplace/core/router/router_setup.dart';
-import 'package:cashew_marketplace/core/services/auth_service/auth_service.dart';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
-import 'package:cashew_marketplace/core/utils/Responsive/responsivea_context.dart';
-import 'package:cashew_marketplace/core/utils/initial_function.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/shared/widgets/custom_input.dart';
-import 'package:cashew_marketplace/core/services/feature_services.dart';
-import 'package:cashew_marketplace/core/services/notification/fcm_service.dart';
+import 'package:hema_fruits/core/constants/app_assets.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/core/services/auth_service/auth_service.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/Responsive/responsivea_context.dart';
+import 'package:hema_fruits/core/utils/initial_function.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/widgets/custom_input.dart';
+import 'package:hema_fruits/core/services/feature_services.dart';
+import 'package:hema_fruits/core/services/notification/fcm_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (isSuccess) {
         if (token != null && token.isNotEmpty) {
           await SecureStorageService.saveToken(token);
-          await FCMService.initialize();
+        await FCMService.initialize();
           final userData = JwtDecoder.decode(token);
           final String uid = userData['id'] ?? '';
           if (uid.isNotEmpty) {
@@ -524,13 +524,13 @@ class _LoginScreenState extends State<LoginScreen>
     return Column(
       children: [
         Text(
-          'Cashew Marketplace',
+          'Hema Fruits',
           textAlign: TextAlign.center,
           style: tt.headlineLarge,
         ),
         const SizedBox(height: 12),
         Text(
-          'Secure marketplace for RCN and Kernel products. Connect with verified buyers and merchants globally.',
+          'Secure marketplace to connect with verified buyers and merchants globally.',
           textAlign: TextAlign.center,
           style: tt.bodyMedium,
         ),

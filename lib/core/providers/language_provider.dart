@@ -1,8 +1,8 @@
-import 'package:cashew_marketplace/core/repositories/report_repository.dart';
-import 'package:cashew_marketplace/core/repositories/settings_repository.dart';
-import 'package:cashew_marketplace/core/services/feature_services.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/core/services/user_service.dart';
+import 'package:hema_fruits/core/repositories/report_repository.dart';
+import 'package:hema_fruits/core/repositories/settings_repository.dart';
+import 'package:hema_fruits/core/services/feature_services.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/core/services/user_service.dart';
 import 'package:flutter/material.dart';
 
 class LanguageProvider extends ChangeNotifier {

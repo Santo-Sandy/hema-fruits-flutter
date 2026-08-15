@@ -1,13 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cashew_marketplace/core/constants/app_assets.dart';
-import 'package:cashew_marketplace/core/constants/app_strings.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/core/utils/Responsive/responsivea_context.dart';
-import 'package:cashew_marketplace/core/utils/apptoaster.dart';
-import 'package:cashew_marketplace/core/utils/currency.dart';
-import 'package:cashew_marketplace/shared/models/notification_model.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/core/constants/app_assets.dart';
+import 'package:hema_fruits/core/constants/app_strings.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/core/utils/Responsive/responsivea_context.dart';
+import 'package:hema_fruits/core/utils/apptoaster.dart';
+import 'package:hema_fruits/core/utils/currency.dart';
+import 'package:hema_fruits/shared/models/notification_model.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

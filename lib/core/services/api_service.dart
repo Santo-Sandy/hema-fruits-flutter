@@ -1,4 +1,4 @@
-import 'package:cashew_marketplace/core/config/app_config.dart';
+import 'package:hema_fruits/core/config/app_config.dart';
 import 'package:dio/dio.dart';
 
 class ApiService {

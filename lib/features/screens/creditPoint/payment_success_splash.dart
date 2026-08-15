@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/core/utils/formatters.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/core/utils/formatters.dart';
 
 class PaymentSuccessSplashScreen extends StatefulWidget {
   final double amount;

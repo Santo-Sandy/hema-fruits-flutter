@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_text_theme.dart';
 
-/// Cashew Marketplace Dark Theme
+/// Hema Fruits Dark Theme
 class DarkTheme {
   DarkTheme._();
 

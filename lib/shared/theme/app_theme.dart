@@ -1,7 +1,7 @@
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
-/// Cashew Marketplace Material 3 ThemeData
+/// Hema Fruits Material 3 ThemeData
 ///
 /// Color roles:
 ///  • Brown  = primary  → buttons, CTAs, active states, progress

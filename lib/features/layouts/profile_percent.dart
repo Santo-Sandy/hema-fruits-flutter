@@ -1,5 +1,5 @@
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/widgets/widgets.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePercent extends StatelessWidget {

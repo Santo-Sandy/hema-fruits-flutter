@@ -1,4 +1,4 @@
-import 'package:cashew_marketplace/core/services/api_service.dart';
+import 'package:hema_fruits/core/services/api_service.dart';
 import 'package:dio/dio.dart';
 
 class UserService {

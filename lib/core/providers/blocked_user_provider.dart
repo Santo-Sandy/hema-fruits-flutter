@@ -1,7 +1,7 @@
-import 'package:cashew_marketplace/core/providers/feature_providers.dart';
-import 'package:cashew_marketplace/core/repositories/settings_repository.dart';
-import 'package:cashew_marketplace/core/services/feature_services.dart';
-import 'package:cashew_marketplace/shared/models/blocked_user_model.dart';
+import 'package:hema_fruits/core/providers/feature_providers.dart';
+import 'package:hema_fruits/core/repositories/settings_repository.dart';
+import 'package:hema_fruits/core/services/feature_services.dart';
+import 'package:hema_fruits/shared/models/blocked_user_model.dart';
 import 'package:flutter/material.dart';
 
 class BlockedUserProvider extends BaseProvider {

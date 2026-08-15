@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
 
 class FirstLoginRewardScreen extends StatefulWidget {
   final int rewardPoints;

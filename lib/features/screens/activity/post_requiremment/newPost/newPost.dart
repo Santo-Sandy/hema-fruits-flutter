@@ -1,17 +1,17 @@
-import 'package:cashew_marketplace/core/providers/feature_providers.dart';
-import 'package:cashew_marketplace/core/providers/swap_user_provider.dart';
-import 'package:cashew_marketplace/core/router/router_setup.dart';
-import 'package:cashew_marketplace/core/services/api_service.dart';
-import 'package:cashew_marketplace/core/services/feature_services.dart';
-import 'package:cashew_marketplace/core/services/offline_queue_service.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
-import 'package:cashew_marketplace/core/utils/formatters.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/shared/widgets/custom.dart';
-import 'package:cashew_marketplace/shared/widgets/custom_input.dart';
+import 'package:hema_fruits/core/providers/feature_providers.dart';
+import 'package:hema_fruits/core/providers/swap_user_provider.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/core/services/api_service.dart';
+import 'package:hema_fruits/core/services/feature_services.dart';
+import 'package:hema_fruits/core/services/offline_queue_service.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/formatters.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/widgets/custom.dart';
+import 'package:hema_fruits/shared/widgets/custom_input.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +52,46 @@ class _NewPostScreen extends State<NewPostScreen> {
   bool get hideGrade => widget.type.toUpperCase() == "RCN";
   bool get hideNutOutCrop => widget.type.toUpperCase() == "KERNEL";
   bool get hideCertificateHighSea => widget.role.toLowerCase() == "buyer";
+
+  bool get isMultiple => widget.type.toUpperCase() == "MULTIPLE";
+  List<Map<String, dynamic>> multipleProducts = [];
+
+  Future<void> pickAndUploadProductImage(int index) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    setState(() => multipleProducts[index]['isUploading'] = true);
+
+    try {
+      final bytes = await picked.readAsBytes();
+      final fileName = picked.name;
+
+      final dio = ApiService.instance.dio;
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: fileName),
+        'folders': 'marketplace/stocks',
+      });
+
+      final response = await dio.post(
+        'file/marketplace/stocks',
+        data: formData,
+      );
+      final resData = response.data;
+
+      if (resData != null && resData["status"] == 200) {
+        final fileData = resData["data"][0];
+        setState(() {
+          multipleProducts[index]['image'] = Map<String, dynamic>.from(fileData);
+        });
+      }
+    } catch (e) {
+      debugPrint('Product image upload failed: $e');
+      showError('Image upload failed: $e');
+    } finally {
+      setState(() => multipleProducts[index]['isUploading'] = false);
+    }
+  }
 
   final nutCountController = TextEditingController();
   final outTurnController = TextEditingController();
@@ -141,6 +181,17 @@ class _NewPostScreen extends State<NewPostScreen> {
   @override
   void initState() {
     super.initState();
+    if (isMultiple && !widget.isEdit) {
+      multipleProducts = [
+        {
+          'nameController': TextEditingController(),
+          'rateController': TextEditingController(),
+          'descriptionController': TextEditingController(),
+          'image': null,
+          'isUploading': false,
+        }
+      ];
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ContextManager().saveCurrentPage('Newpost', context);
@@ -159,6 +210,11 @@ class _NewPostScreen extends State<NewPostScreen> {
     cityController.dispose();
     descriptionController.dispose();
     moistureContentController.dispose();
+    for (final p in multipleProducts) {
+      p['nameController']?.dispose();
+      p['rateController']?.dispose();
+      p['descriptionController']?.dispose();
+    }
     super.dispose();
   }
 
@@ -334,6 +390,18 @@ class _NewPostScreen extends State<NewPostScreen> {
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
       }
+      if (isMultiple && data["products"] is List) {
+        multipleProducts = (data["products"] as List).map((prod) {
+          final p = Map<String, dynamic>.from(prod);
+          return {
+            'nameController': TextEditingController(text: p['name']?.toString() ?? ''),
+            'rateController': TextEditingController(text: p['rate']?.toString() ?? ''),
+            'descriptionController': TextEditingController(text: p['description']?.toString() ?? ''),
+            'image': p['image'] != null ? Map<String, dynamic>.from(p['image']) : null,
+            'isUploading': false,
+          };
+        }).toList();
+      }
     }
   }
 
@@ -461,8 +529,8 @@ class _NewPostScreen extends State<NewPostScreen> {
 
     setState(() {
       originError = selectedOrigin == null ? 'Required' : null;
-      gradeError = (!hideGrade && selectedGrade == null) ? 'Required' : null;
-      cropYearError = (!hideNutOutCrop && selectedCropYear == null)
+      gradeError = (!hideGrade && !isMultiple && selectedGrade == null) ? 'Required' : null;
+      cropYearError = (!hideNutOutCrop && !isMultiple && selectedCropYear == null)
           ? 'Required'
           : null;
       currencyError = selectedCurrency == null ? 'Required' : null;
@@ -478,10 +546,27 @@ class _NewPostScreen extends State<NewPostScreen> {
         orderDateError == null &&
         deliveryDateError == null;
 
-    final inlineErrorsValid =
-        numberError.isEmpty && nutCountError.isEmpty && outTurnError.isEmpty;
+    final inlineErrorsValid = isMultiple
+        ? numberError.isEmpty
+        : (numberError.isEmpty && nutCountError.isEmpty && outTurnError.isEmpty);
 
-    return formValid && dropdownsValid && inlineErrorsValid;
+    bool multipleValid = true;
+    if (isMultiple) {
+      for (final p in multipleProducts) {
+        final name = p['nameController'].text.trim();
+        final rate = p['rateController'].text.trim();
+        final desc = p['descriptionController'].text.trim();
+        final image = p['image'];
+        if (name.isEmpty || rate.isEmpty || desc.isEmpty || image == null) {
+          multipleValid = false;
+        }
+      }
+      if (!multipleValid) {
+        showError("Please complete all product fields and upload product images.");
+      }
+    }
+
+    return formValid && dropdownsValid && inlineErrorsValid && multipleValid;
   }
 
   Future<void> pickOrderDate() async {
@@ -723,22 +808,16 @@ class _NewPostScreen extends State<NewPostScreen> {
       final user = await SecureStorageService.getUserData();
       if (!mounted) return;
 
-      // final priced = widget.isEdit
-      //     ? priceunit != selectedpriceper
-      //           ? selectedpriceper == 'MT'
-      //                 ? int.parse(removeCommas(expectedPriceController.text)) *
-      //                       1000
-      //                 : int.parse(removeCommas(expectedPriceController.text)) /
-      //                       1000
-      //           : int.parse(removeCommas(expectedPriceController.text))
-      //     : int.parse(removeCommas(expectedPriceController.text));
+      final firstProductRate = isMultiple && multipleProducts.isNotEmpty
+          ? int.tryParse(removeCommas(multipleProducts[0]['rateController'].text)) ?? 0
+          : int.tryParse(removeCommas(expectedPriceController.text)) ?? 0;
 
       final bidding = {
         'id': user['_id'],
         'name': user['name'] ?? "Post owner",
         'profile': user['profilePicture'],
         'date': DateTime.now().toUtc().toIso8601String(),
-        'price': int.parse(removeCommas(expectedPriceController.text)),
+        'price': firstProductRate,
       };
       if (widget.isEdit && priceunit != selectedpriceper) {
         if (selectedpriceper == 'MT') {
@@ -758,11 +837,26 @@ class _NewPostScreen extends State<NewPostScreen> {
 
       final userId = user["_id"];
       Map<String, dynamic> payload;
+
+      final productList = isMultiple
+          ? multipleProducts.map((p) {
+              return {
+                'name': p['nameController'].text,
+                'rate': int.tryParse(removeCommas(p['rateController'].text)) ?? 0,
+                'description': p['descriptionController'].text,
+                'image': p['image'],
+              };
+            }).toList()
+          : [];
+
+      final firstProductDesc = productList.isNotEmpty ? productList[0]['description']?.toString() ?? "" : "";
+      final productImages = productList.map((p) => p['image']).where((img) => img != null).toList();
+
       if (widget.role == "buyer") {
         payload = {
           "buyerId": userId,
           "userid": userId,
-          "nutCount": hideNutOutCrop ? "" : nutCountController.text,
+          "nutCount": (hideNutOutCrop || isMultiple) ? "" : nutCountController.text,
           "type": widget.type,
           "status": "Active",
           "requiredqty": unit == 'MT'
@@ -775,7 +869,7 @@ class _NewPostScreen extends State<NewPostScreen> {
                     .toIso8601String()
               : orderDate!.toUtc().toIso8601String(),
           "country": selectedCountry ?? "",
-          "outTurn": hideNutOutCrop ? "" : outTurnController.text,
+          "outTurn": (hideNutOutCrop || isMultiple) ? "" : outTurnController.text,
           "pincode": _pincodeController.text ?? " ",
           "origin": selectedOrigin,
           "biddings": biddings,
@@ -788,12 +882,10 @@ class _NewPostScreen extends State<NewPostScreen> {
           "unit": unit,
           "priceincludegst": selectedsaleType == "Included GST",
           "shippingmethod": selectedsaleType,
-          "yearOfCrop": hideNutOutCrop ? "" : selectedCropYear.toString(),
-          "description": descriptionController.text,
-          "grade": hideGrade ? "RCN" : (selectedGrade ?? ""),
-          "expectedprice": int.parse(
-            removeCommas(expectedPriceController.text),
-          ),
+          "yearOfCrop": (hideNutOutCrop || isMultiple) ? "" : selectedCropYear.toString(),
+          "description": isMultiple ? firstProductDesc : descriptionController.text,
+          "grade": isMultiple ? "Multiple" : (hideGrade ? "RCN" : (selectedGrade ?? "")),
+          "expectedprice": firstProductRate,
           "deliverydate": !widget.isEdit
               ? deliveryDate
                     ?.add(const Duration(hours: 23, minutes: 59, seconds: 59))
@@ -805,28 +897,26 @@ class _NewPostScreen extends State<NewPostScreen> {
           "isDeleted": false,
           "created_by": userId,
           "currency": selectedCurrency,
-          // "moistureContent": hideGrade
-          //     ? 0
-          //     : int.parse(moistureContentController.text),
         };
-        if (hideGrade) {
-          payload["moistureContent"] = int.parse(
-            moistureContentController.text,
-          );
+        if (isMultiple) {
+          payload["products"] = productList;
+          payload["images"] = productImages;
+        } else if (hideGrade) {
+          payload["moistureContent"] = int.tryParse(moistureContentController.text) ?? 0;
         }
       } else {
         payload = {
           "origin": selectedOrigin,
           "type": widget.type,
-          "grade": hideGrade ? "RCN" : (selectedGrade ?? ""),
-          "outturn": hideNutOutCrop ? "" : outTurnController.text,
-          "yearofcrop": hideNutOutCrop ? "" : selectedCropYear.toString(),
+          "grade": isMultiple ? "Multiple" : (hideGrade ? "RCN" : (selectedGrade ?? "")),
+          "outturn": (hideNutOutCrop || isMultiple) ? "" : outTurnController.text,
+          "yearofcrop": (hideNutOutCrop || isMultiple) ? "" : selectedCropYear.toString(),
           "rba": certificate,
-          "netcount": hideNutOutCrop ? "" : nutCountController.text,
+          "netcount": (hideNutOutCrop || isMultiple) ? "" : nutCountController.text,
           "minimumqty": unit == 'MT'
               ? (int.parse(removeCommas(minSupplyController.text)) * 1000)
               : int.parse(removeCommas(minSupplyController.text)),
-          "sellingprice": int.parse(removeCommas(expectedPriceController.text)),
+          "sellingprice": firstProductRate,
           "availableqty": unit == 'MT'
               ? (int.parse(removeCommas(requiredQtyController.text)) * 1000)
               : int.parse(removeCommas(requiredQtyController.text)),
@@ -853,18 +943,18 @@ class _NewPostScreen extends State<NewPostScreen> {
               : deliveryDate!.toUtc().toIso8601String(),
           "high": highSea,
           "negotiateprice": allowLowerBids,
-          "description": descriptionController.text,
-          "images": uploadedImages,
+          "description": isMultiple ? firstProductDesc : descriptionController.text,
+          "images": isMultiple ? productImages : uploadedImages,
           "status": "Active",
           "userid": userId,
           "created_by": userId,
           "isDeleted": false,
           "currency": selectedCurrency,
         };
-        if (hideGrade) {
-          payload["moistureContent"] = int.parse(
-            moistureContentController.text,
-          );
+        if (isMultiple) {
+          payload["products"] = productList;
+        } else if (hideGrade) {
+          payload["moistureContent"] = int.tryParse(moistureContentController.text) ?? 0;
         }
       }
       // if (widget.isEdit) {
@@ -1107,6 +1197,329 @@ class _NewPostScreen extends State<NewPostScreen> {
           ),
         ],
         const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildMultipleProductsSection({bool isWeb = false}) {
+    if (isWeb) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader("Products List"),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              ...multipleProducts.asMap().entries.map((entry) {
+                final index = entry.key;
+                final p = entry.value;
+                final nameCtrl = p['nameController'] as TextEditingController;
+                final rateCtrl = p['rateController'] as TextEditingController;
+                final descCtrl = p['descriptionController'] as TextEditingController;
+                final image = p['image'];
+                final isUploading = p['isUploading'] as bool;
+
+                final imageUrl = image != null && image['storage_name'] != null
+                    ? '$_apiBase${image['storage_name']}'
+                    : null;
+
+                return Container(
+                  width: 420,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.8)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Product #${index + 1}",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          if (multipleProducts.length > 1)
+                            IconButton(
+                              icon: Icon(Icons.delete_outline, color: AppColors.error),
+                              onPressed: () {
+                                setState(() {
+                                  multipleProducts.removeAt(index);
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: isUploading ? null : () => pickAndUploadProductImage(index),
+                            child: Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                color: AppColors.borderLight.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.5)),
+                              ),
+                              child: isUploading
+                                  ? const Center(child: CircularProgressIndicator())
+                                  : imageUrl != null
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.network(imageUrl, fit: BoxFit.cover),
+                                        )
+                                      : Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.add_a_photo_outlined, color: AppColors.primary, size: 24),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "Upload",
+                                              style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+                                            ),
+                                          ],
+                                        ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                CustomTextFormField(
+                                  controller: nameCtrl,
+                                  label: "Product Name *",
+                                  hintText: "e.g. Alphonso Mango",
+                                  validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                                ),
+                                const SizedBox(height: 12),
+                                CustomTextFormField(
+                                  controller: rateCtrl,
+                                  label: "Rate (Price) *",
+                                  hintText: "e.g. 150",
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextFormField(
+                        controller: descCtrl,
+                        label: "Features / Description *",
+                        hintText: "Enter product details and features...",
+                        maxLines: 2,
+                        validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              // Add product card
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    multipleProducts.add({
+                      'nameController': TextEditingController(),
+                      'rateController': TextEditingController(),
+                      'descriptionController': TextEditingController(),
+                      'image': null,
+                      'isUploading': false,
+                    });
+                  });
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 420,
+                  height: 275,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_circle_outline_rounded, size: 48, color: AppColors.primary),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Add Another Product",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Include more varieties/options in this post",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader("Products List"),
+        const SizedBox(height: 8),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: multipleProducts.length,
+          itemBuilder: (context, index) {
+            final p = multipleProducts[index];
+            final nameCtrl = p['nameController'] as TextEditingController;
+            final rateCtrl = p['rateController'] as TextEditingController;
+            final descCtrl = p['descriptionController'] as TextEditingController;
+            final image = p['image'];
+            final isUploading = p['isUploading'] as bool;
+
+            final imageUrl = image != null && image['storage_name'] != null
+                ? '$_apiBase${image['storage_name']}'
+                : null;
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: AppColors.borderLight.withValues(alpha: 0.5)),
+              ),
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Product #${index + 1}",
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        if (multipleProducts.length > 1)
+                          IconButton(
+                            icon: Icon(Icons.delete_outline, color: AppColors.error),
+                            onPressed: () {
+                              setState(() {
+                                multipleProducts.removeAt(index);
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Image upload inside product
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: isUploading ? null : () => pickAndUploadProductImage(index),
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: AppColors.borderLight.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.borderLight),
+                            ),
+                            child: isUploading
+                                ? const Center(child: CircularProgressIndicator())
+                                : imageUrl != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.network(imageUrl, fit: BoxFit.cover),
+                                      )
+                                    : const Icon(Icons.add_a_photo_outlined),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              CustomTextFormField(
+                                controller: nameCtrl,
+                                label: "Product Name *",
+                                hintText: "e.g. Alphonso Mango",
+                                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                              ),
+                              const SizedBox(height: 8),
+                              CustomTextFormField(
+                                controller: rateCtrl,
+                                label: "Rate (Price) *",
+                                hintText: "e.g. 150",
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    CustomTextFormField(
+                      controller: descCtrl,
+                      label: "Features / Description *",
+                      hintText: "Enter product details and features...",
+                      maxLines: 2,
+                      validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () {
+            setState(() {
+              multipleProducts.add({
+                'nameController': TextEditingController(),
+                'rateController': TextEditingController(),
+                'descriptionController': TextEditingController(),
+                'image': null,
+                'isUploading': false,
+              });
+            });
+          },
+          icon: const Icon(Icons.add),
+          label: const Text("Add Another Product"),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -1569,196 +1982,172 @@ class _NewPostScreen extends State<NewPostScreen> {
                                 ),
                               ],
                             ),
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // const SizedBox(width: 10),
-                          Expanded(
-                            child: CustomTextFormFieldright(
-                              controller: expectedPriceController,
-                              label: widget.role == "buyer"
-                                  ? Translate.t(
-                                      "post.expected_selling_price_per_kg",
-                                    )
-                                  : Translate.t("post.selling_price_per_kg"),
-                              hintText: "0.00",
-                              onVerifyPressed: () {
-                                // showUnitSelector(context, "selectedpriceper");
-                                // setState(() {
-                                //   selectedpriceper = selectedpriceper == 'Kg'
-                                //       ? 'MT'
-                                //       : "Kg";
-                                // });
-                              },
-                              onprefixPressed: () {
-                                showCurrencySelector(
-                                  context,
-                                  "selected currency",
-                                );
-                                // setState(() {
-                                //   selectedpriceper = selectedpriceper == 'Kg'
-                                //       ? 'MT'
-                                //       : "Kg";
-                                // });
-                              },
-                              // prefixIcon: IntrinsicWidth(
-                              //   child: CustomDropdownFormField<String>(
-                              //     decoration: InputDecoration(
-                              //       // contentPadding: EdgeInsets.symmetric(
-                              //       //   horizontal: 8,
-                              //       //   vertical: 0,
-                              //       // ),
-                              //       suffixIcon: const Icon(
-                              //         Icons.arrow_drop_down,
-                              //         size: 20,
-                              //       ),
-                              //       border: OutlineInputBorder(
-                              //         borderSide: BorderSide(
-                              //           color: Colors.transparent,
-                              //         ),
-                              //       ),
-                              //     ),
-                              //     borderColor: Colors.transparent,
-                              //     value: selectedCurrency,
-                              //     items: currencies,
-                              //     labels: currencies,
-                              //     // label: Translate.t("post.currency"),
-                              //     labelStyle: const TextStyle(
-                              //       overflow: TextOverflow.ellipsis,
-                              //     ),
-                              //     onChanged: (v) => setState(() {
-                              //       selectedCurrency = v;
-                              //       currencyError = null; // clear on change
-                              //     }),
-                              //     validator: (v) =>
-                              //         v == null ? 'Required' : null,
-                              //     isRequired: true,
-                              //   ),
-                              // ),
-                              prefixIcon: PopupMenuButton<String>(
-                                padding: EdgeInsets.zero,
-                                onSelected: (value) {
-                                  setState(() {
-                                    selectedCurrency = value;
-                                  });
-                                },
-                                itemBuilder: (context) {
-                                  return currencies
-                                      .map(
-                                        (currency) => PopupMenuItem<String>(
-                                          value: currency,
-                                          child: Text(currency),
-                                        ),
+                      if (!isMultiple) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // const SizedBox(width: 10),
+                            Expanded(
+                              child: CustomTextFormFieldright(
+                                controller: expectedPriceController,
+                                label: widget.role == "buyer"
+                                    ? Translate.t(
+                                        "post.expected_selling_price_per_kg",
                                       )
-                                      .toList();
+                                    : Translate.t("post.selling_price_per_kg"),
+                                hintText: "0.00",
+                                onVerifyPressed: () {
+                                  // showUnitSelector(context, "selectedpriceper");
+                                  // setState(() {
+                                  //   selectedpriceper = selectedpriceper == 'Kg'
+                                  //       ? 'MT'
+                                  //       : "Kg";
+                                  // });
                                 },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        selectedCurrency ?? "USD",
-                                        style: AppTextThemes
-                                            .getLightTextTheme
-                                            .bodyMedium!
-                                            .copyWith(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      Icon(
-                                        Icons.arrow_drop_down,
-                                        color: AppColors.primary,
-                                      ),
-                                    ],
+                                onprefixPressed: () {
+                                  showCurrencySelector(
+                                    context,
+                                    "selected currency",
+                                  );
+                                  // setState(() {
+                                  //   selectedpriceper = selectedpriceper == 'Kg'
+                                  //       ? 'MT'
+                                  //       : "Kg";
+                                  // });
+                                },
+                                // prefixIcon: IntrinsicWidth(
+                                //   child: CustomDropdownFormField<String>(
+                                //     decoration: InputDecoration(
+                                //       // contentPadding: EdgeInsets.symmetric(
+                                //       //   horizontal: 8,
+                                //       //   vertical: 0,
+                                //       // ),
+                                //       suffixIcon: const Icon(
+                                //         Icons.arrow_drop_down,
+                                //         size: 20,
+                                //       ),
+                                //       border: OutlineInputBorder(
+                                //         borderSide: BorderSide(
+                                //           color: Colors.transparent,
+                                //         ),
+                                //       ),
+                                //     ),
+                                //     borderColor: Colors.transparent,
+                                //     value: selectedCurrency,
+                                //     items: currencies,
+                                //     labels: currencies,
+                                //     // label: Translate.t("post.currency"),
+                                //     labelStyle: const TextStyle(
+                                //       overflow: TextOverflow.ellipsis,
+                                //     ),
+                                //     onChanged: (v) => setState(() {
+                                //       selectedCurrency = v;
+                                //       currencyError = null; // clear on change
+                                //     }),
+                                //     validator: (v) =>
+                                //         v == null ? 'Required' : null,
+                                //     isRequired: true,
+                                //   ),
+                                // ),
+                                prefixIcon: PopupMenuButton<String>(
+                                  padding: EdgeInsets.zero,
+                                  onSelected: (value) {
+                                    setState(() {
+                                      selectedCurrency = value;
+                                    });
+                                  },
+                                  itemBuilder: (context) {
+                                    return currencies
+                                        .map(
+                                          (currency) => PopupMenuItem<String>(
+                                            value: currency,
+                                            child: Text(currency),
+                                          ),
+                                        )
+                                        .toList();
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          selectedCurrency ?? "USD",
+                                          style: AppTextThemes
+                                              .getLightTextTheme
+                                              .bodyMedium!
+                                              .copyWith(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                        Icon(
+                                          Icons.arrow_drop_down,
+                                          color: AppColors.primary,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
 
-                              suffixIcon: PopupMenuButton<String>(
-                                padding: EdgeInsets.zero,
-                                onSelected: (value) {
-                                  setState(() {
-                                    selectedpriceper = value;
-                                  });
-                                },
-                                itemBuilder: (context) {
-                                  return ['Kg', 'MT']
-                                      .map(
-                                        (currency) => PopupMenuItem<String>(
-                                          value: currency,
-                                          child: Text(currency),
+                                suffixIcon: PopupMenuButton<String>(
+                                  padding: EdgeInsets.zero,
+                                  onSelected: (value) {
+                                    setState(() {
+                                      selectedpriceper = value;
+                                    });
+                                  },
+                                  itemBuilder: (context) {
+                                    return ['Kg', 'MT']
+                                        .map(
+                                          (currency) => PopupMenuItem<String>(
+                                            value: currency,
+                                            child: Text(currency),
+                                          ),
+                                        )
+                                        .toList();
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          selectedpriceper,
+                                          style: AppTextThemes
+                                              .getLightTextTheme
+                                              .bodyMedium!
+                                              .copyWith(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
-                                      )
-                                      .toList();
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        selectedpriceper,
-                                        style: AppTextThemes
-                                            .getLightTextTheme
-                                            .bodyMedium!
-                                            .copyWith(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      Icon(
-                                        Icons.arrow_drop_down,
-                                        color: AppColors.primary,
-                                      ),
-                                    ],
+                                        Icon(
+                                          Icons.arrow_drop_down,
+                                          color: AppColors.primary,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
+                                keyboardType: TextInputType.number,
+                                onChanged: (_) => handleNumericInput(
+                                  expectedPriceController,
+                                  'expectedPrice',
+                                ),
+                                validator: (v) =>
+                                    v == null || v.isEmpty ? "Required" : null,
                               ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (_) => handleNumericInput(
-                                expectedPriceController,
-                                'expectedPrice',
-                              ),
-                              validator: (v) =>
-                                  v == null || v.isEmpty ? "Required" : null,
                             ),
-                          ),
-                          // const SizedBox(width: 5),
-                          // Expanded(
-                          //   flex: 2,
-                          //   child: Column(
-                          //     children: [
-                          //       CustomDropdownFormField<String>(
-                          //         value: selectedpriceper,
-                          //         items: Priceper,
-                          //         labels: Priceper,
-                          //         label: Translate.t("Kg/MT *"),
-                          //         labelStyle: const TextStyle(
-                          //           overflow: TextOverflow.ellipsis,
-                          //         ),
-                          //         onChanged: (v) => setState(() {
-                          //           selectedpriceper = v;
-                          //           priceperError = null; // clear on change
-                          //         }),
-                          //         validator: (v) =>
-                          //             v == null ? 'Required' : null,
-                          //         isRequired: true,
-                          //       ),
-                          //       SizedBox(height: 20),
-                          //     ],
-                          //   ),
-                          // ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       _buildSectionHeader(
                         widget.role == "buyer"
                             ? Translate.t("post.location_supply")
@@ -1802,19 +2191,23 @@ class _NewPostScreen extends State<NewPostScreen> {
                         },
                       ),
                       // const SizedBox(height: 16),
-                      CustomTextFormField(
-                        height: 150,
-                        controller: descriptionController,
-                        label: widget.role == "buyer"
-                            ? Translate.t("post.remark")
-                            : Translate.t("post.description"),
-                        hintText: Translate.t("post.description_hint"),
-                        keyboardType: TextInputType.multiline,
-                        maxLines: 4,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      // const SizedBox(height: 24),
-                      _buildImageUploadSection(result),
+                      if (!isMultiple) ...[
+                        CustomTextFormField(
+                          height: 150,
+                          controller: descriptionController,
+                          label: widget.role == "buyer"
+                              ? Translate.t("post.remark")
+                              : Translate.t("post.description"),
+                          hintText: Translate.t("post.description_hint"),
+                          keyboardType: TextInputType.multiline,
+                          maxLines: 4,
+                          onChanged: (_) => setState(() {}),
+                        ),
+                        // const SizedBox(height: 24),
+                        _buildImageUploadSection(result),
+                      ] else ...[
+                        _buildMultipleProductsSection(),
+                      ],
 
                       _buildSectionHeader(
                         widget.role == "buyer"
@@ -1877,7 +2270,178 @@ class _NewPostScreen extends State<NewPostScreen> {
                       // DESKTOP / TABLET LAYOUT
                       // ─────────────────────────────────────────
                     ] else ...[
-                      if (hideGrade) ...[
+                      if (isMultiple) ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 380,
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.8)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.03),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildSectionHeader(Translate.t("post.basic_information")),
+                                  const SizedBox(height: 12),
+                                  CustomDropdownFormField<String>(
+                                    value: selectedOrigin ?? userdata['country'],
+                                    items: origins,
+                                    labels: origins,
+                                    label: Translate.t("post.origin"),
+                                    onChanged: (v) => setState(() {
+                                      selectedOrigin = v;
+                                      originError = null;
+                                    }),
+                                    prefixIcon: Icons.language,
+                                    validator: (v) => v == null ? "Required" : null,
+                                    isRequired: true,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomDropdownFormField<String>(
+                                    value: selectedsale,
+                                    items: sale,
+                                    labels: sale,
+                                    label: Translate.t("post.shipment_type"),
+                                    onChanged: (v) => setState(() {
+                                      selectedsale = v;
+                                      if (v == "International") {
+                                        isshipment = true;
+                                      } else {
+                                        isshipment = false;
+                                      }
+                                      saleError = null;
+                                    }),
+                                    validator: (v) => v == null ? "Required" : null,
+                                    isRequired: true,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomTextFormFieldright(
+                                    controller: requiredQtyController,
+                                    label: widget.role == "buyer"
+                                        ? Translate.t("post.required_quantity")
+                                        : Translate.t("post.available_quantity"),
+                                    hintText: Translate.t("post.enter_quantity"),
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      MinValueInputFormatter(confirmedkg),
+                                    ],
+                                    onChanged: (_) => handleNumericInput(requiredQtyController, 'quantity'),
+                                    suffixIcon: PopupMenuButton<String>(
+                                      onSelected: (val) => setState(() => unit = val),
+                                      itemBuilder: (ctx) => ['Kg', 'MT'].map((u) => PopupMenuItem(value: u, child: Text(u))).toList(),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(unit, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                          Icon(Icons.arrow_drop_down, color: AppColors.primary),
+                                        ],
+                                      ),
+                                    ),
+                                    validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomTextFormFieldright(
+                                    controller: minSupplyController,
+                                    label: widget.role == "buyer"
+                                        ? Translate.t("post.minimum_supply_quantity")
+                                        : Translate.t("post.minimum_order_quantity"),
+                                    hintText: Translate.t("post.minimum_quantity"),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (_) => handleNumericInput(minSupplyController, 'minSupplyQuantity'),
+                                    suffixIcon: Text(unit, style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                    validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  isshipment
+                                      ? CustomDropdownFormField<String>(
+                                          value: selectedsaleType,
+                                          items: shipmentsaleTypes,
+                                          labels: shipmentsaleTypes,
+                                          label: Translate.t("post.shipment_basis"),
+                                          onChanged: (v) => setState(() => selectedsaleType = v),
+                                          validator: (v) => v == null ? "Required" : null,
+                                          isRequired: true,
+                                        )
+                                      : Row(
+                                          children: [
+                                            CustomCheckbox(
+                                              label: "Inclusive of VAT/GST",
+                                              value: selectedsaleType == "Inclusive of VAT/GST",
+                                              onChanged: (v) => setState(() {
+                                                selectedsaleType = v == true ? "Inclusive of VAT/GST" : "Exclusive of VAT/GST";
+                                              }),
+                                            ),
+                                          ],
+                                        ),
+                                  const SizedBox(height: 16),
+                                  CustomTextFormField(
+                                    controller: cityController,
+                                    label: Translate.t("post.stock_location"),
+                                    inputFormatters: [FirstLetterUpperCaseFormatter()],
+                                    hintText: "Enter city/location name",
+                                    keyboardType: TextInputType.text,
+                                    validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomTextFormField(
+                                    controller: _pincodeController,
+                                    label: Translate.t("post.pincode"),
+                                    hintText: '000000',
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      LengthLimitingTextInputFormatter(12),
+                                    ],
+                                    validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildSectionHeader("Dates"),
+                                  const SizedBox(height: 8),
+                                  _buildDatePickerTile(
+                                    title: orderDate == null
+                                        ? Translate.t("post.stock_available_from")
+                                        : "From: ${orderDate!.day}/${orderDate!.month}/${orderDate!.year}",
+                                    onTap: pickOrderDate,
+                                    errorText: orderDateError,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildDatePickerTile(
+                                    title: deliveryDate == null
+                                        ? Translate.t("post.stock_available_till")
+                                        : "Till: ${deliveryDate!.day}/${deliveryDate!.month}/${deliveryDate!.year}",
+                                    onTap: orderDate == null ? null : pickDeliveryDate,
+                                    isDisabled: orderDate == null,
+                                    errorText: deliveryDateError,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  CustomCheckbox(
+                                    value: allowLowerBids,
+                                    onChanged: (v) => setState(() => allowLowerBids = v ?? false),
+                                    label: Translate.t("post.allow_negotiation"),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: _buildMultipleProductsSection(isWeb: true),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        if (hideGrade) ...[
                         _buildSectionHeader(
                           Translate.t("post.basic_information"),
                         ),
@@ -2621,6 +3185,7 @@ class _NewPostScreen extends State<NewPostScreen> {
                           ],
                         ),
                       ],
+                    ],
                     ],
 
                     const SizedBox(height: 32),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_text_theme.dart';
 
-/// Cashew Marketplace Light Theme
+/// Hema Fruits Light Theme
 ///
 /// Color roles (production):
 ///  • Green  (#5B6F1D) = brand, AppBar, nav, progress, focus — 45%

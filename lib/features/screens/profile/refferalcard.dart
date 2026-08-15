@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cashew_marketplace/core/constants/app_assets.dart';
-import 'package:cashew_marketplace/core/providers/user_provider.dart';
-import 'package:cashew_marketplace/core/repositories/settings_repository.dart';
-import 'package:cashew_marketplace/core/services/referral/referral_service.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
+import 'package:hema_fruits/core/constants/app_assets.dart';
+import 'package:hema_fruits/core/providers/user_provider.dart';
+import 'package:hema_fruits/core/repositories/settings_repository.dart';
+import 'package:hema_fruits/core/services/referral/referral_service.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';

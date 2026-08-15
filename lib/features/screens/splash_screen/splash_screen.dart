@@ -1,10 +1,10 @@
-import 'package:cashew_marketplace/core/constants/app_assets.dart';
-import 'package:cashew_marketplace/core/providers/color_provider.dart';
-import 'package:cashew_marketplace/core/providers/user_provider.dart';
-import 'package:cashew_marketplace/core/services/filter_request.dart';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
-import 'package:cashew_marketplace/core/utils/initial_function.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/core/constants/app_assets.dart';
+import 'package:hema_fruits/core/providers/color_provider.dart';
+import 'package:hema_fruits/core/providers/user_provider.dart';
+import 'package:hema_fruits/core/services/filter_request.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/initial_function.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -84,22 +84,25 @@ class _SplashScreenState extends State<SplashScreen>
     );
     final bool isprofile = userdata['isProfileComplete'] ?? false;
 
-    if (!isprofileLocal) {
-      if (token != '' && !isprofile) {
-        context.go('/profilesetup');
-        return;
-      }
-    }
-    if (userdata['initializer_screen'] == "Dashboard") {
-      context.go(RoutePath.dashboard);
-    } else if (userdata['initializer_screen'] == "BiddingScreen") {
-      // context.go(RoutePath.home);
-      context.go(RoutePath.salesBuyBidding);
-    } else if (userdata['initializer_screen'] == "Marketplace") {
+    // if (!isprofileLocal) {
+    //   if (token != '' && !isprofile) {
+    //     context.go('/profilesetup');
+    //     return;
+    //   }
+    // }
+    // if (userdata['initializer_screen'] == "Dashboard") {
+    //   context.go(RoutePath.dashboard);
+    // } else if (userdata['initializer_screen'] == "BiddingScreen") {
+    //   // context.go(RoutePath.home);
+    //   context.go(RoutePath.salesBuyBidding);
+    // } else if (userdata['initializer_screen'] == "Marketplace") {
+    //   context.go(RoutePath.home);
+    // } else {
+    //   context.go(RoutePath.dashboard);
+    // }
+
+    
       context.go(RoutePath.home);
-    } else {
-      context.go(RoutePath.dashboard);
-    }
     return;
   }
 
@@ -142,7 +145,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   // const SizedBox(height: 24),
                   // Text(
-                  //   'Cashew Marketplace',
+                  //   'Hema Fruits',
                   //   style: tt.headlineMedium?.copyWith(
                   //     fontWeight: FontWeight.bold,
                   //   ),

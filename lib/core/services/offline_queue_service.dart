@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:cashew_marketplace/core/services/api_service.dart';
-import 'package:cashew_marketplace/shared/local_storage/hive_service.dart';
+import 'package:hema_fruits/core/services/api_service.dart';
+import 'package:hema_fruits/shared/local_storage/hive_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';

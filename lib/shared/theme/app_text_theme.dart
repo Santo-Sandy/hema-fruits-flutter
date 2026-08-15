@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cashew_marketplace/core/utils/Responsive/responsivea_context.dart';
+import 'package:hema_fruits/core/utils/Responsive/responsivea_context.dart';
 import 'app_colors.dart';
 
 class AppTextThemes {

@@ -1,27 +1,27 @@
-import 'package:cashew_marketplace/core/constants/app_assets.dart';
-import 'package:cashew_marketplace/core/providers/feature_providers.dart';
-import 'package:cashew_marketplace/core/providers/swap_user_provider.dart';
-import 'package:cashew_marketplace/core/providers/user_provider.dart';
-import 'package:cashew_marketplace/core/repositories/post_repository.dart';
-import 'package:cashew_marketplace/core/repositories/settings_repository.dart';
-import 'package:cashew_marketplace/core/router/router_setup.dart';
-import 'package:cashew_marketplace/core/services/auth_service/auth_service.dart';
-import 'package:cashew_marketplace/core/services/feature_services.dart';
-import 'package:cashew_marketplace/core/services/filter_request.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/core/utils/Responsive/responsivea_context.dart';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
-import 'package:cashew_marketplace/core/utils/filters_dynamc.dart';
-import 'package:cashew_marketplace/core/utils/formatters.dart';
-import 'package:cashew_marketplace/features/layouts/skeleton_loader.dart';
-import 'package:cashew_marketplace/features/screens/activity/post_requiremment/newPost/newPost.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/shared/widgets/activity_page_controls.dart';
-import 'package:cashew_marketplace/shared/widgets/custom_input.dart';
-import 'package:cashew_marketplace/shared/widgets/custom.dart';
-import 'package:cashew_marketplace/shared/widgets/filter_widgets.dart';
+import 'package:hema_fruits/core/constants/app_assets.dart';
+import 'package:hema_fruits/core/providers/feature_providers.dart';
+import 'package:hema_fruits/core/providers/swap_user_provider.dart';
+import 'package:hema_fruits/core/providers/user_provider.dart';
+import 'package:hema_fruits/core/repositories/post_repository.dart';
+import 'package:hema_fruits/core/repositories/settings_repository.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/core/services/auth_service/auth_service.dart';
+import 'package:hema_fruits/core/services/feature_services.dart';
+import 'package:hema_fruits/core/services/filter_request.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/core/utils/Responsive/responsivea_context.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/filters_dynamc.dart';
+import 'package:hema_fruits/core/utils/formatters.dart';
+import 'package:hema_fruits/features/layouts/skeleton_loader.dart';
+import 'package:hema_fruits/features/screens/activity/post_requiremment/newPost/newPost.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/widgets/activity_page_controls.dart';
+import 'package:hema_fruits/shared/widgets/custom_input.dart';
+import 'package:hema_fruits/shared/widgets/custom.dart';
+import 'package:hema_fruits/shared/widgets/filter_widgets.dart';
 import 'package:custom_date_range_picker/custom_date_range_picker.dart';
 import 'package:flutter/material.dart' hide SearchBar;
 import 'package:go_router/go_router.dart';
@@ -699,6 +699,12 @@ class _MyPostAndResponse extends State<MyPostAndResponse> {
           'icon': Icons.sell_outlined,
         },
         {
+          'label': '${Translate.t("filter.multiple")} - Sale',
+          'role': 'processor',
+          'type': 'Multiple',
+          'icon': Icons.sell_outlined,
+        },
+        {
           'label': '${Translate.t("filter.rcn")} - Purchase',
           'role': 'buyer',
           'type': 'RCN',
@@ -708,6 +714,12 @@ class _MyPostAndResponse extends State<MyPostAndResponse> {
           'label': '${Translate.t("filter.kernel")} - Purchase',
           'role': 'buyer',
           'type': 'Kernel',
+          'icon': Icons.shopping_cart_outlined,
+        },
+        {
+          'label': '${Translate.t("filter.multiple")} - Purchase',
+          'role': 'buyer',
+          'type': 'Multiple',
           'icon': Icons.shopping_cart_outlined,
         },
       ]);
@@ -727,6 +739,12 @@ class _MyPostAndResponse extends State<MyPostAndResponse> {
           'role': role,
           'type': 'Kernel',
           'icon': Icons.inventory,
+        },
+        {
+          'label': Translate.t("filter.multiple"),
+          'role': role,
+          'type': 'Multiple',
+          'icon': Icons.list_alt,
         },
       ]);
     } else if (isbothpost) {
@@ -1702,9 +1720,12 @@ class _MyPostAndResponse extends State<MyPostAndResponse> {
               statusBgColor: AppColors.primarySubtle,
               icon: Icons.delete,
               iconColor: AppColors.error,
-              title:
-                  '${item['type'] == 'Kernel' ? "${item['grade']} Kernel" : "${item['yearOfCrop'] ?? item['yearofcrop']} RCN"} - ${item['origin']}',
-              id: "Origin / ${item['type'] == 'Kernel' ? "Grade" : "Year Of Crop"}",
+              title: item['type'] == 'Multiple'
+                  ? "Multiple Option Post - ${item['origin']}"
+                  : '${item['type'] == 'Kernel' ? "${item['grade']} Kernel" : "${item['yearOfCrop'] ?? item['yearofcrop']} RCN"} - ${item['origin']}',
+              id: item['type'] == 'Multiple'
+                  ? "Origin / Products"
+                  : "Origin / ${item['type'] == 'Kernel' ? "Grade" : "Year Of Crop"}",
               postedDate: Formatters.formatDate(
                 item["created_on"]?.toString() ?? "",
               ),

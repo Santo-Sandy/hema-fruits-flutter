@@ -1,12 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cashew_marketplace/core/config/app_config.dart';
-import 'package:cashew_marketplace/core/extensions/string_ext.dart';
-import 'package:cashew_marketplace/core/utils/currency.dart';
-import 'package:cashew_marketplace/core/utils/formatters.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/shared/widgets/view_card_widget.dart';
-import 'package:cashew_marketplace/shared/widgets/view_screen_widget.dart';
+import 'package:hema_fruits/core/config/app_config.dart';
+import 'package:hema_fruits/core/extensions/string_ext.dart';
+import 'package:hema_fruits/core/utils/currency.dart';
+import 'package:hema_fruits/core/utils/formatters.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/widgets/view_card_widget.dart';
+import 'package:hema_fruits/shared/widgets/view_screen_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 

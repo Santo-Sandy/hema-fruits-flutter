@@ -1,9 +1,9 @@
-import 'package:cashew_marketplace/core/repositories/post_repository.dart';
-import 'package:cashew_marketplace/core/repositories/response_repository.dart';
-import 'package:cashew_marketplace/core/repositories/settings_repository.dart';
-import 'package:cashew_marketplace/core/repositories/stock_repository.dart';
-import 'package:cashew_marketplace/core/repositories/user_repository.dart';
-import 'package:cashew_marketplace/core/services/offline_queue_service.dart';
+import 'package:hema_fruits/core/repositories/post_repository.dart';
+import 'package:hema_fruits/core/repositories/response_repository.dart';
+import 'package:hema_fruits/core/repositories/settings_repository.dart';
+import 'package:hema_fruits/core/repositories/stock_repository.dart';
+import 'package:hema_fruits/core/repositories/user_repository.dart';
+import 'package:hema_fruits/core/services/offline_queue_service.dart';
 import 'package:flutter/material.dart';
 import '../services/feature_services.dart';
 

@@ -1,13 +1,13 @@
-import 'package:cashew_marketplace/core/constants/app_assets.dart';
-import 'package:cashew_marketplace/core/router/router_setup.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/core/utils/apptoaster.dart';
-import 'package:cashew_marketplace/core/utils/currency.dart';
-import 'package:cashew_marketplace/core/utils/formatters.dart';
-import 'package:cashew_marketplace/core/utils/uri_launcher.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/shared/widgets/view_card_widget.dart';
+import 'package:hema_fruits/core/constants/app_assets.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/core/utils/apptoaster.dart';
+import 'package:hema_fruits/core/utils/currency.dart';
+import 'package:hema_fruits/core/utils/formatters.dart';
+import 'package:hema_fruits/core/utils/uri_launcher.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/widgets/view_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -2389,3 +2389,317 @@ Future<void> showRejectRemarkDialog(
     remarkCtrl.dispose();
   }
 }
+
+class ProductCardMultiple extends StatefulWidget {
+  final List<dynamic> products;
+  final String location;
+  final String quantity;
+  final String postedDate;
+  final String expireDate;
+  final String shipmenttype;
+  final String shipmentmethod;
+  final bool isgst;
+  final String minimumOrder;
+  final String? currency;
+  final Function(bool isLiked)? onLike;
+  final Function()? onbiddinglist;
+  final bool? isliked;
+  final bool negotiatePrice;
+  final bool isMypost;
+  final String stockLocation;
+
+  const ProductCardMultiple({
+    Key? key,
+    required this.products,
+    required this.location,
+    required this.quantity,
+    required this.postedDate,
+    required this.expireDate,
+    required this.shipmenttype,
+    required this.shipmentmethod,
+    this.isgst = false,
+    required this.minimumOrder,
+    this.currency,
+    this.onLike,
+    this.onbiddinglist,
+    this.isliked,
+    required this.negotiatePrice,
+    required this.isMypost,
+    required this.stockLocation,
+  }) : super(key: key);
+
+  @override
+  State<ProductCardMultiple> createState() => _ProductCardMultipleState();
+}
+
+class _ProductCardMultipleState extends State<ProductCardMultiple> {
+  bool isLiked = false;
+  static const String _apiBase = "https://cerp.sgp1.digitaloceanspaces.com/";
+
+  @override
+  void initState() {
+    super.initState();
+    isLiked = widget.isliked ?? false;
+  }
+
+  void _toggleLike() {
+    AppToast.showFavoriteToast(
+      context,
+      isLiked ? "Removed from favorite" : "Added to favorite",
+    );
+    setState(() => isLiked = !isLiked);
+    widget.onLike?.call(isLiked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.borderLight.withOpacity(0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight.withOpacity(0.08),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Common Post Details Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Multiple Option Post",
+                      style: AppTextThemes.getLightTextTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_rounded, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            widget.location,
+                            style: AppTextThemes.getLightTextTheme.bodyMedium?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (!widget.isMypost && widget.onLike != null)
+                IconButton(
+                  icon: Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? AppColors.error : AppColors.textSecondaryLight,
+                  ),
+                  onPressed: _toggleLike,
+                ),
+            ],
+          ),
+          const Divider(height: 24),
+
+          // Shipment & Quantity Info
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildInfoItem("Total Quantity", widget.quantity),
+              _buildInfoItem("Min Order", widget.minimumOrder),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildInfoItem("Shipment Type", widget.shipmenttype),
+              _buildInfoItem("Shipment Basis", widget.shipmentmethod),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildInfoItem("Location", widget.stockLocation),
+              _buildInfoItem("Available Till", widget.expireDate),
+            ],
+          ),
+          const Divider(height: 24),
+
+          // Products List Section Header
+          Text(
+            "Products List",
+            style: AppTextThemes.getLightTextTheme.titleSmall?.copyWith(
+              color: AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Products List
+          if (widget.products.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                "No products added.",
+                style: TextStyle(color: AppColors.textSecondaryLight),
+              ),
+            )
+          else
+            ...widget.products.map((prod) => _buildProductItem(prod)).toList(),
+
+          if (widget.negotiatePrice && widget.onbiddinglist != null) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: widget.onbiddinglist,
+                child: const Text("View Responses / Negotiation"),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String label, String value) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextThemes.getLightTextTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondaryLight,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: AppTextThemes.getLightTextTheme.bodyMedium?.copyWith(
+              color: AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductItem(dynamic prod) {
+    final name = prod['name']?.toString() ?? 'Unnamed';
+    final rate = prod['rate']?.toString() ?? '0';
+    final description = prod['description']?.toString() ?? '';
+    final imageMap = prod['image'];
+    final imageUrl = imageMap != null && imageMap['storage_name'] != null
+        ? '$_apiBase${imageMap['storage_name']}'
+        : null;
+
+    final formattedRate = "${widget.currency ?? '₹'} $rate / Kg";
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight.withOpacity(0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: imageUrl != null
+                ? Image.network(
+                    imageUrl,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+                  )
+                : _buildPlaceholderImage(),
+          ),
+          const SizedBox(width: 12),
+
+          // Product Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: AppTextThemes.getLightTextTheme.titleSmall?.copyWith(
+                          color: AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      formattedRate,
+                      style: AppTextThemes.getLightTextTheme.titleSmall?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: AppTextThemes.getLightTextTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: 70,
+      height: 70,
+      color: AppColors.borderLight.withOpacity(0.3),
+      child: Icon(
+        Icons.image_outlined,
+        color: AppColors.textSecondaryLight,
+      ),
+    );
+  }
+}
+

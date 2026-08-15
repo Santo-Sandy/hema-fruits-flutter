@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:cashew_marketplace/core/plugins/device_plugins.dart';
+import 'package:hema_fruits/core/plugins/device_plugins.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 class DeviceService {

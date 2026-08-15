@@ -7,9 +7,9 @@ class AppAssets {
   static const iconRcn = 'assets/icons/rcn.png';
   static const iconKernel = 'assets/icons/kernel.png';
   static const iconCashew = 'assets/icons/cashew.png';
-  static const iconCashewLogo = 'assets/icons/cashew--logo.png';
+  static const iconCashewLogo = 'assets/icons/hema-logo.png';
   static const splashLogo = 'assets/icons/splashscreen.png';
-  static const splash = 'assets/icons/splash.png';
+  static const splash = 'assets/icons/splashscreen.png';
   static const backgroundLogo = 'assets/icons/background.png';
 
   static const googleLogo = 'assets/images/google_logo.png';

@@ -1,8 +1,8 @@
-import 'package:cashew_marketplace/core/providers/language_provider.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/shared/widgets/toast_notification.dart';
+import 'package:hema_fruits/core/providers/language_provider.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/widgets/toast_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

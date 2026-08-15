@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
-import 'package:cashew_marketplace/core/services/api_service.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/core/services/api_service.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
 import 'package:flutter/foundation.dart';
 
 /// Production-ready referral deep-link service.

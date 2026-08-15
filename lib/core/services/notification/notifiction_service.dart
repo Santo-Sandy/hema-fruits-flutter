@@ -1,6 +1,6 @@
-import 'package:cashew_marketplace/core/router/router_config.dart';
-import 'package:cashew_marketplace/core/router/router_setup.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/core/router/router_config.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
 import 'package:flutter/material.dart';
 
 class NotificationNavigationService {

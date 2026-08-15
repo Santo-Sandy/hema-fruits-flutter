@@ -1,4 +1,4 @@
-import 'package:cashew_marketplace/shared/local_storage/hive_service.dart';
+import 'package:hema_fruits/shared/local_storage/hive_service.dart';
 import 'package:hive/hive.dart';
 
 class StockRepository {

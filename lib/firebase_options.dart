@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -49,22 +40,49 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBCTRthX-nn8xYd_J9feAELpnb7fZRzNH4',
-    appId: '1:492996321386:android:38ae680254b82bf0222a13',
-    messagingSenderId: '492996321386',
-    projectId: 'kajupro-market-place',
-    storageBucket: 'kajupro-market-place.firebasestorage.app',
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyCqR48o36m_67oMl7YznDJBjEppkoJhTu4',
+    appId: '1:505664063959:web:20d86130d5af5abd996392',
+    messagingSenderId: '505664063959',
+    projectId: 'hema-fruits',
+    authDomain: 'hema-fruits.firebaseapp.com',
+    storageBucket: 'hema-fruits.firebasestorage.app',
+    measurementId: 'G-MWEC4H7LDZ',
   );
 
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBHLvRDRD_1Coq2uRAnHzmoxEq18kChvTM',
+    appId: '1:505664063959:android:63c70e8d7c90b7ad996392',
+    messagingSenderId: '505664063959',
+    projectId: 'hema-fruits',
+    storageBucket: 'hema-fruits.firebasestorage.app',
+  );
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDzNWD9UNexPBDRhuPB1lJx0yn7DIlBDZM',
-    appId: '1:492996321386:ios:a03295b412a4e505222a13',
-    messagingSenderId: '492996321386',
-    projectId: 'kajupro-market-place',
-    storageBucket: 'kajupro-market-place.firebasestorage.app',
-    androidClientId: '492996321386-11s88j60het3bmh4hg4i0vc2btub4qju.apps.googleusercontent.com',
-    iosClientId: '492996321386-9mbgcr8ak38q65sacfotbel5u1kbqcjj.apps.googleusercontent.com',
-    iosBundleId: 'com.kajupro.marketapp',
+    apiKey: 'AIzaSyAk_Vt2MWncU0X3mjCY9b6_QvPjBtp6xMM',
+    appId: '1:505664063959:ios:5ee7a91fcace51d3996392',
+    messagingSenderId: '505664063959',
+    projectId: 'hema-fruits',
+    storageBucket: 'hema-fruits.firebasestorage.app',
+    iosClientId: '505664063959-foq89p7ccbqcmstr03ld6d6j27gifp2b.apps.googleusercontent.com',
+    iosBundleId: 'com.hema.fruits',
+  );
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyAk_Vt2MWncU0X3mjCY9b6_QvPjBtp6xMM',
+    appId: '1:505664063959:ios:5ee7a91fcace51d3996392',
+    messagingSenderId: '505664063959',
+    projectId: 'hema-fruits',
+    storageBucket: 'hema-fruits.firebasestorage.app',
+    iosClientId: '505664063959-foq89p7ccbqcmstr03ld6d6j27gifp2b.apps.googleusercontent.com',
+    iosBundleId: 'com.hema.fruits',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCqR48o36m_67oMl7YznDJBjEppkoJhTu4',
+    appId: '1:505664063959:web:b0dbd9fc3ffbf3f5996392',
+    messagingSenderId: '505664063959',
+    projectId: 'hema-fruits',
+    authDomain: 'hema-fruits.firebaseapp.com',
+    storageBucket: 'hema-fruits.firebasestorage.app',
+    measurementId: 'G-S8P5DCYV6P',
   );
 }

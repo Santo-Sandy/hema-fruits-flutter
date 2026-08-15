@@ -1,5 +1,5 @@
-import 'package:cashew_marketplace/core/repositories/notification_repository.dart';
-import 'package:cashew_marketplace/core/services/feature_services.dart';
+import 'package:hema_fruits/core/repositories/notification_repository.dart';
+import 'package:hema_fruits/core/services/feature_services.dart';
 import 'package:flutter/material.dart';
 
 class NotificationProvider extends ChangeNotifier {

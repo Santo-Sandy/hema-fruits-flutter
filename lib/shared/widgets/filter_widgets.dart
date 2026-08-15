@@ -1,6 +1,6 @@
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
 import 'package:flutter/material.dart';
 
 class searchbarwidget extends StatefulWidget {

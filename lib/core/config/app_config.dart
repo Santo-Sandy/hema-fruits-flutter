@@ -1,8 +1,8 @@
-import 'package:cashew_marketplace/core/services/auth_service/auth_service.dart';
-import 'package:cashew_marketplace/core/services/notification/fcm_service.dart';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
-import 'package:cashew_marketplace/core/utils/initial_function.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/core/services/auth_service/auth_service.dart';
+import 'package:hema_fruits/core/services/notification/fcm_service.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/initial_function.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -29,8 +29,7 @@ class AppConfig {
   static String _imageurl = "https://cerp.sgp1.digitaloceanspaces.com/";
   Dio get dio => _dio;
 
-  static const _baseUrl = 'https://api.kajupro.com/';
-  // static const _baseUrl = 'http://10.0.0.132:7002/';
+  static const _baseUrl = 'http://10.0.0.132:7002/';
   // static const _baseUrl = 'http://192.168.1.9:7002/';
   // static const _baseUrl = 'http://10.0.0.151:7004/';
 

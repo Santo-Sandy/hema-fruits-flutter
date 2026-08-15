@@ -1,4 +1,4 @@
-package com.kajupro.marketapp
+package com.hema.fruits
 
 import io.flutter.embedding.android.FlutterActivity
 

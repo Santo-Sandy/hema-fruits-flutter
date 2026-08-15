@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 //
-//  CASHEW MARKETPLACE — PRODUCTION COLOR SYSTEM
+//  HEMA FRUITS — PRODUCTION COLOR SYSTEM
 //
 //  Brand Identity (from logo):
 //   GREEN  (#5B6F1D)  = Brand / Agriculture / Growth          45% of UI

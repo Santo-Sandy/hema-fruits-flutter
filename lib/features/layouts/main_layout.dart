@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:cashew_marketplace/core/router/router_setup.dart';
-import 'package:cashew_marketplace/core/services/offline_queue_service.dart';
-import 'package:cashew_marketplace/core/utils/responsive/app_breakpoints.dart';
-import 'package:cashew_marketplace/features/layouts/tablet_sidebar.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/core/services/offline_queue_service.dart';
+import 'package:hema_fruits/core/utils/responsive/app_breakpoints.dart';
+import 'package:hema_fruits/features/layouts/tablet_sidebar.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

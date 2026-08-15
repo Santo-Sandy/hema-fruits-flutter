@@ -1,27 +1,27 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cashew_marketplace/core/config/app_config.dart';
-import 'package:cashew_marketplace/core/providers/feature_providers.dart';
-import 'package:cashew_marketplace/core/providers/language_provider.dart';
-import 'package:cashew_marketplace/core/providers/user_provider.dart';
-import 'package:cashew_marketplace/core/repositories/report_repository.dart';
-import 'package:cashew_marketplace/core/repositories/response_repository.dart';
-import 'package:cashew_marketplace/core/repositories/settings_repository.dart';
-import 'package:cashew_marketplace/core/router/router_setup.dart';
-import 'package:cashew_marketplace/core/services/feature_services.dart';
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
-import 'package:cashew_marketplace/core/utils/formatters.dart';
-import 'package:cashew_marketplace/core/utils/currency.dart';
-import 'package:cashew_marketplace/features/layouts/skeleton_loader.dart';
-import 'package:cashew_marketplace/features/screens/view_screen/view_screen_safety.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/theme/app_text_theme.dart';
-import 'package:cashew_marketplace/shared/widgets/custom.dart';
-import 'package:cashew_marketplace/shared/widgets/response_list_widget.dart';
-import 'package:cashew_marketplace/shared/widgets/view_card_widget.dart';
-import 'package:cashew_marketplace/shared/widgets/view_screen_widget.dart';
-import 'package:cashew_marketplace/shared/widgets/zoomable_page.dart';
+import 'package:hema_fruits/core/config/app_config.dart';
+import 'package:hema_fruits/core/providers/feature_providers.dart';
+import 'package:hema_fruits/core/providers/language_provider.dart';
+import 'package:hema_fruits/core/providers/user_provider.dart';
+import 'package:hema_fruits/core/repositories/report_repository.dart';
+import 'package:hema_fruits/core/repositories/response_repository.dart';
+import 'package:hema_fruits/core/repositories/settings_repository.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/core/services/feature_services.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/formatters.dart';
+import 'package:hema_fruits/core/utils/currency.dart';
+import 'package:hema_fruits/features/layouts/skeleton_loader.dart';
+import 'package:hema_fruits/features/screens/view_screen/view_screen_safety.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_text_theme.dart';
+import 'package:hema_fruits/shared/widgets/custom.dart';
+import 'package:hema_fruits/shared/widgets/response_list_widget.dart';
+import 'package:hema_fruits/shared/widgets/view_card_widget.dart';
+import 'package:hema_fruits/shared/widgets/view_screen_widget.dart';
+import 'package:hema_fruits/shared/widgets/zoomable_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -1062,6 +1062,32 @@ class _BuyerResponseViiewScreenState extends State<BuyerResponseViiewScreen> {
         : list
               .map((e) => int.tryParse(e['price'].toString()) ?? 0)
               .reduce((a, b) => a > b ? a : b);
+    if (item['type'] == 'Multiple') {
+      return ProductCardMultiple(
+        products: item['products'] ?? [],
+        shipmentmethod: item['shippingmethod'] ?? "",
+        shipmenttype: item['shipmenttype'] ?? "",
+        isgst: item['priceincludegst'] ?? false,
+        isMypost: false,
+        negotiatePrice: item['negotiateprice'] ?? false,
+        quantity: _formatToKg(available),
+        postedDate: PostViewUtils.formatDate(item['fromdate'] ?? item['created_on'] ?? item['orderDate'] ?? ""),
+        expireDate: PostViewUtils.formatDate(item['expiredate'] ?? item['deliverydate'] ?? ""),
+        minimumOrder: _formatToKg(item['minimumqty'] ?? '0'),
+        stockLocation: '${item['location'] ?? ""} ${item['pincode'] ?? ""}',
+        currency: getCurrencySymbol(item['currency'] ?? ""),
+        isliked: ((item['favorite'] ?? []) as List?)?.contains(userId) ?? false,
+        onLike: (v) =>
+            _postAction(id: item['_id'] ?? "", action: 'favorite', status: !v),
+        location: PostViewUtils.getString(
+          '${item['flag'] ?? ''}  ${item['origin'] ?? ""}',
+        ),
+        onbiddinglist: () {
+          showBiddings(context, list);
+        },
+      );
+    }
+
     if (item['type'] == 'Kernel') {
       return ProductCardKernel(
         shipmentmethod: item['shippingmethod'] ?? "",

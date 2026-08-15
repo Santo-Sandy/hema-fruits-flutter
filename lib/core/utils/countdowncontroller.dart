@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 

@@ -1,5 +1,5 @@
-import 'package:cashew_marketplace/core/services/auth_service/auth_service.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/core/services/auth_service/auth_service.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
 import 'package:flutter/material.dart';
 
 class SwapUserProvider extends ChangeNotifier {

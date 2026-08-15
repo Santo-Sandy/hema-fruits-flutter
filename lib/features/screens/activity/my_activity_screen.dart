@@ -1,8 +1,8 @@
-import 'package:cashew_marketplace/core/services/translate.dart';
-import 'package:cashew_marketplace/features/screens/activity/post_requiremment/my_post_screen.dart';
-import 'package:cashew_marketplace/features/screens/activity/enquiry/my_enquiry_screen.dart';
-import 'package:cashew_marketplace/shared/theme/app_colors.dart';
-import 'package:cashew_marketplace/shared/widgets/activity_page_controls.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/features/screens/activity/post_requiremment/my_post_screen.dart';
+import 'package:hema_fruits/features/screens/activity/enquiry/my_enquiry_screen.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:hema_fruits/shared/widgets/activity_page_controls.dart';
 import 'package:flutter/material.dart';
 
 class MyActivityScreen extends StatefulWidget {

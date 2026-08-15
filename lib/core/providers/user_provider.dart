@@ -1,11 +1,11 @@
-import 'package:cashew_marketplace/core/providers/feature_providers.dart';
-import 'package:cashew_marketplace/core/repositories/settings_repository.dart';
-import 'package:cashew_marketplace/core/repositories/user_repository.dart';
-import 'package:cashew_marketplace/core/services/auth_service/auth_service.dart';
-import 'package:cashew_marketplace/core/services/user_service.dart';
-import 'package:cashew_marketplace/core/utils/context_manager.dart';
-import 'package:cashew_marketplace/core/utils/initial_function.dart';
-import 'package:cashew_marketplace/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/core/providers/feature_providers.dart';
+import 'package:hema_fruits/core/repositories/settings_repository.dart';
+import 'package:hema_fruits/core/repositories/user_repository.dart';
+import 'package:hema_fruits/core/services/auth_service/auth_service.dart';
+import 'package:hema_fruits/core/services/user_service.dart';
+import 'package:hema_fruits/core/utils/context_manager.dart';
+import 'package:hema_fruits/core/utils/initial_function.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
