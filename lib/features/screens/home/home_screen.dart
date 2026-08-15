@@ -28,6 +28,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import 'widgets/home_search_bar.dart';
+import 'widgets/home_banner_carousel.dart';
+import 'widgets/home_quick_categories.dart';
+
 class HomeScreen extends StatefulWidget {
   final int initialTab;
   final String? type;
@@ -206,9 +210,26 @@ class _HomeScreen extends State<HomeScreen>
   String? get search => _activeFilter.search;
   set search(String? value) => _activeFilter.search = value;
   late StreamSubscription _subscription;
+  late PageController _bannerPageController;
+  int _currentBannerPage = 0;
+  Timer? _bannerTimer;
+
   @override
   void initState() {
     super.initState();
+    _bannerPageController = PageController(initialPage: 0);
+    _bannerTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (!mounted) return;
+      if (_bannerPageController.hasClients) {
+        int nextPage = _currentBannerPage + 1;
+        if (nextPage >= 3) nextPage = 0;
+        _bannerPageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
     _subscription = AppEvents.postRefreshController.stream.listen((_) {
       getPost();
     });
@@ -775,9 +796,10 @@ class _HomeScreen extends State<HomeScreen>
   @override
   void dispose() {
     _debounce?.cancel();
+    _bannerTimer?.cancel();
+    _bannerPageController.dispose();
     _subscription.cancel();
     _scrollController.dispose();
-    // _tab.dispose(); // Commented out as _tab is not defined in this context
     searchController.dispose();
     super.dispose();
   }
@@ -795,15 +817,22 @@ class _HomeScreen extends State<HomeScreen>
     return Stack(
       children: [
         Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // OLD TAB BAR → replaced by dropdown navigation
-            // _buildStylishTabBar(context),
-
-            // NEW: pill-dropdown + filter button row
+            HomeSearchBar(
+              controller: searchController,
+              onChanged: (val) {
+                setState(() {
+                  search = val;
+                  _activeFilter.search = val;
+                  _syncFiltersToAllTabs();
+                });
+                _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 500), () {
+                  getPost();
+                });
+              },
+            ),
             _buildNewTabNavigation(context),
-
-            // _buildFilterSection(context),
             Expanded(
               child: Consumer<PostProvider>(
                 builder: (context, provider, child) {
@@ -838,18 +867,21 @@ class _HomeScreen extends State<HomeScreen>
                         _buildPostsList(
                           context,
                           provider.post,
+                          0,
                           hasMore: provider.hasMoreNew,
                           filter: _filterForTab(0),
                         ),
                         _buildPostsList(
                           context,
                           provider.viewedpost,
+                          1,
                           hasMore: provider.hasMoreViewed,
                           filter: _filterForTab(1),
                         ),
                         _buildPostsList(
                           context,
                           provider.favoritepost,
+                          2,
                           hasMore: provider.hasMoreFavorite,
                           filter: _filterForTab(2),
                         ),
@@ -1628,7 +1660,8 @@ class _HomeScreen extends State<HomeScreen>
 
   Widget _buildPostsList(
     BuildContext context,
-    List<dynamic> posts, {
+    List<dynamic> posts,
+    int tabIndex, {
     bool hasMore = false,
     _HomeTabFilterState? filter,
   }) {
@@ -1692,73 +1725,8 @@ class _HomeScreen extends State<HomeScreen>
       return true;
     }).toList();
 
-    if (!isLoading && filteredPosts.isEmpty) {
-      return _buildEmptyState(context);
-    }
+    final showEmptyState = !isLoading && filteredPosts.isEmpty;
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        await getPost();
-      },
-      child: _buildAdaptiveGrid(context, filteredPosts, hasMore),
-    );
-  }
-
-  void showCompleteProfilePopup(
-    BuildContext context,
-    String message,
-    String button,
-    String path,
-  ) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          titlePadding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  message,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.close_rounded, size: 20),
-                splashRadius: 20,
-              ),
-            ],
-          ),
-          // content: Text(message),
-          actionsPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          actions: [
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  context.pop();
-                  context.push(path);
-                },
-                child: Text(button),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildAdaptiveGrid(
-    BuildContext context,
-    List<dynamic> filteredPosts,
-    bool hasMore,
-  ) {
     final spacing = context.gridSpacing;
 
     Future<void> handleNavigation(dynamic item) async {
@@ -1771,11 +1739,6 @@ class _HomeScreen extends State<HomeScreen>
         if (!iscomplete) {
           context.push(path, extra: item['_id']);
           await action(id: item['_id'], action: "viewed");
-          // getPost(
-          //   load: true,
-          //   refreshDynamicFilters: false,
-          //   suppressLoading: true,
-          // );
         }
       } catch (e) {
         debugPrint('handleNavigation error: $e');
@@ -1805,45 +1768,121 @@ class _HomeScreen extends State<HomeScreen>
       );
     }
 
-    if (!context.isTablet && !context.isDesktop) {
-      return ListView.separated(
-        controller: _scrollController,
-        // padding: context.screenPadding,
-        itemCount: filteredPosts.length,
-        cacheExtent: 1000,
-        separatorBuilder: (_, __) => SizedBox(height: 0),
-        itemBuilder: (context, index) {
-          // if (index >= filteredPosts.length) {
-          //   return const MarketplaceListingCardSkeleton();
-          // }
-          return buildCard(filteredPosts[index]);
-        },
-      );
-    }
-
-    final columns = context.switchValue(mobile: 1, tablet: 2, desktop: 3);
-
-    return GridView.builder(
-      controller: _scrollController,
-      padding: context.screenPadding,
-      cacheExtent: 1000,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        childAspectRatio: context.switchValue(
-          mobile: 1.0,
-          tablet: 2.4,
-          desktop: 2,
-        ),
-        crossAxisSpacing: spacing * 0.3,
-        mainAxisSpacing: spacing * 0.3,
-      ),
-      itemCount: filteredPosts.length,
-      itemBuilder: (context, index) {
-        // if (index >= filteredPosts.length) {
-        //   return const MarketplaceListingCardSkeleton();
-        // }
-        return buildCard(filteredPosts[index]);
+    return RefreshIndicator(
+      onRefresh: () async {
+        await getPost();
       },
+      child: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          // 1. Promotional banners carousel (only for "New Listings" tab)
+          if (tabIndex == 0)
+            SliverToBoxAdapter(
+              child: HomeBannerCarousel(
+                controller: _bannerPageController,
+                currentPage: _currentBannerPage,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentBannerPage = index;
+                  });
+                },
+                onCategoryTap: (cat) {
+                  _updateFilter(cat);
+                },
+              ),
+            ),
+          // 2. Categories quick actions row (only for "New Listings" tab)
+          if (tabIndex == 0)
+            SliverToBoxAdapter(
+              child: HomeQuickCategories(
+                onCategoryTap: (cat) {
+                  _updateFilter(cat);
+                },
+                onRoleTap: (role) {
+                  setState(() {
+                    if (role == "buyer") {
+                      currentRole = "requirements";
+                      selectedPostFilter = "Purchase";
+                    } else {
+                      currentRole = "stocks";
+                      selectedPostFilter = "Sale";
+                    }
+                  });
+                  _syncFiltersToAllTabs();
+                  _updateFilter("All Listings");
+                },
+                onWalletTap: () => context.push(RoutePath.creditpoint),
+              ),
+            ),
+          // 3. Section Title / Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16, top: 12, bottom: 4),
+              child: Text(
+                tabIndex == 0 
+                  ? "Featured Listings" 
+                  : (tabIndex == 1 ? "Recently Viewed" : "My Favorites"),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+          // 4. Adaptive Grid or List of cards OR Empty State
+          if (showEmptyState)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.search_off_rounded,
+                        size: 64,
+                        color: AppColors.textHintLight,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        Translate.t("homeScreen.no_data"),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textHintLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              sliver: context.isTablet || context.isDesktop
+                  ? SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: context.isDesktop ? 3 : 2,
+                        childAspectRatio: context.isDesktop ? 1.0 : 2.4,
+                        crossAxisSpacing: spacing * 0.3,
+                        mainAxisSpacing: spacing * 0.3,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => buildCard(filteredPosts[index]),
+                        childCount: filteredPosts.length,
+                      ),
+                    )
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => buildCard(filteredPosts[index]),
+                        childCount: filteredPosts.length,
+                      ),
+                    ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1958,9 +1997,57 @@ class _HomeScreen extends State<HomeScreen>
       ),
     );
   }
-}
 
-// ==================== Post Card Widget ====================
+  void showCompleteProfilePopup(
+    BuildContext context,
+    String message,
+    String button,
+    String path,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          titlePadding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  Translate.t("popup.complete_profile"),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              IconButton(
+                onPressed: () => context.pop(),
+                icon: const Icon(Icons.close_rounded, size: 20),
+                splashRadius: 20,
+              ),
+            ],
+          ),
+          content: Text(message),
+          actionsPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  context.pop();
+                  context.push(path);
+                },
+                child: Text(button),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
 
 class Postview extends StatefulWidget {
   final dynamic item;

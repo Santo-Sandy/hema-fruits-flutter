@@ -82,18 +82,27 @@ class _MarketplaceListingCardState extends State<MarketplaceListingCard>
   @override
   void initState() {
     super.initState();
-
+    isLiked = widget.liked;
     _likeAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-
-    _likeScaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+    _likeScaleAnimation = Tween<double>(begin: 1.0, end: 1.4).animate(
       CurvedAnimation(
         parent: _likeAnimationController,
-        curve: Curves.elasticOut,
+        curve: Curves.bounceOut,
       ),
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant MarketplaceListingCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.liked != widget.liked) {
+      setState(() {
+        isLiked = widget.liked;
+      });
+    }
   }
 
   @override
@@ -102,467 +111,307 @@ class _MarketplaceListingCardState extends State<MarketplaceListingCard>
     super.dispose();
   }
 
-  Future<void> _toggleLike() async {
-    {
-      if (!isLiked == true) {
-        setState(() => isLiked = !isLiked);
-        widget.onLike?.call(isLiked);
-        AppToast.showFavoriteToast(context, "Added to favorite");
-      } else {
-        setState(() => isLiked = !isLiked);
-        widget.onLike?.call(isLiked);
-        // final shouldRemove = await FavoriteDialog.showUnFavoriteDialog(context);
-        AppToast.showFavoriteToast(context, "Removed from favorite");
-        // if (shouldRemove == true) {
-        // remove favorite
-        // } else {}
-      }
-    }
-
+  void _toggleLike() {
+    setState(() {
+      isLiked = !isLiked;
+    });
+    widget.onLike?.call(isLiked);
     if (isLiked) {
       _likeAnimationController.forward(from: 0.0);
+      AppToast.showFavoriteToast(context, "Added to favorites");
+    } else {
+      AppToast.showFavoriteToast(context, "Removed from favorites");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isStock = widget.posttype == "stocks";
-    isLiked = widget.liked;
+    
+    // Parse price to calculate mock discount details
+    double priceVal = double.tryParse(widget.pricePerUnit.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+    double crossedPrice = priceVal * 1.25; // mock original price showing 20% discount
+    String symbol = getCurrencySymbol(widget.currency);
+    
     return GestureDetector(
       onTap: widget.onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-        child: Container(
-          width: widget.width,
-          // constraints: const BoxConstraints(minHeight: 140),
-          decoration: BoxDecoration(
-            color: isStock ? AppColors.sellerCardBg : AppColors.buyerCardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.borderDark.withAlpha(80),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        width: widget.width,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFEEEEEE),
+            width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
           child: Stack(
             children: [
-              // Main Content
-              Padding(
-                padding: EdgeInsets.all(
-                  context.switchValue(mobile: 12, tablet: 14, desktop: 16),
+              // Flipkart-style left accent indicator tag
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 6,
+                child: Container(
+                  color: isStock ? AppColors.secondary : AppColors.primary,
                 ),
+              ),
+
+              // Main content layout
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Header Row: Title, Like, Share
+                    // TOP ROW: Type badge, Rating, Favorite icon
+                    Row(
+                      children: [
+                        // Post Type Tag
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isStock 
+                              ? AppColors.secondary.withOpacity(0.1) 
+                              : AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isStock ? "SELLING STOCK" : "BUY REQUIREMENT",
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: isStock ? AppColors.secondary : AppColors.primary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Ratings stars
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 14),
+                            const SizedBox(width: 2),
+                            Text(
+                              "4.3",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              "(14)",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textHintDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Favorite button with bounce animation
+                        ScaleTransition(
+                          scale: _likeScaleAnimation,
+                          child: GestureDetector(
+                            onTap: _toggleLike,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(
+                                isLiked ? Icons.favorite : Icons.favorite_border_rounded,
+                                color: isLiked ? AppColors.error : AppColors.textHintDark,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // BODY ROW: Image + Description
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Fruit Category Icon / Photo
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 68,
+                          height: 68,
                           decoration: BoxDecoration(
+                            color: const Color(0xFFF7F7F7),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.beige,
+                              color: const Color(0xFFECECEC),
                               width: 1,
                             ),
-                            color: Colors.white, // optional
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.asset(
-                              widget.isrcn
-                                  ? AppAssets.iconRcn
-                                  : AppAssets.iconKernel,
-                              fit: BoxFit.cover,
+                              widget.isrcn ? AppAssets.iconRcn : AppAssets.iconKernel,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 5),
-                        // Title & Quantity
+                        const SizedBox(width: 12),
+
+                        // Info section
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
+                              Text(
+                                widget.title,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF212121),
+                                  height: 1.25,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              // Location row
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      widget.title,
-                                      style: AppTextThemes
-                                          .getLightTextTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: AppColors.textPrimary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                      maxLines: 2,
-                                      // overflow: TextOverflow.ellipsis,
-                                    ),
+                                  Icon(
+                                    widget.high ? Icons.anchor_rounded : Icons.location_on_rounded,
+                                    size: 13,
+                                    color: AppColors.textHintDark,
                                   ),
-                                  GestureDetector(
-                                    onTap: _toggleLike,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        isLiked
-                                            ? Icons.favorite
-                                            : Icons.favorite_outline,
-                                        color: isLiked
-                                            ? AppColors.error
-                                            : AppColors.textSecondary,
-                                        size: 20,
-                                      ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    widget.high ? "High Sea" : widget.location,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textHintDark,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-
-                        // Flexible(
-                        //   flex: 3,
-                        //   child: Column(
-                        //     crossAxisAlignment: CrossAxisAlignment.end,
-                        //     children: [
-                        //       Row(
-                        //         mainAxisAlignment: MainAxisAlignment.end,
-                        //         children: [
-                        //           GestureDetector(
-                        //             onTap: _toggleLike,
-                        //             child: Container(
-                        //               padding: const EdgeInsets.all(8),
-                        //               decoration: BoxDecoration(
-                        //                 borderRadius: BorderRadius.circular(8),
-                        //               ),
-                        //               child: Icon(
-                        //                 isLiked
-                        //                     ? Icons.favorite
-                        //                     : Icons.favorite_outline,
-                        //                 color: isLiked
-                        //                     ? AppColors.error
-                        //                     : AppColors.textSecondary,
-                        //                 size: 20,
-                        //               ),
-                        //             ),
-                        //           ),
-
-                        //           // GestureDetector(
-                        //           //   onTap: widget.onShare,
-                        //           //   child: Container(
-                        //           //     padding: const EdgeInsets.all(8),
-                        //           //     decoration: BoxDecoration(
-                        //           //       borderRadius: BorderRadius.circular(8),
-                        //           //     ),
-                        //           //     child: Icon(
-                        //           //       Icons.open_in_new,
-                        //           //       color: AppColors.primary,
-                        //           //       size: 20,
-                        //           //     ),
-                        //           //   ),
-                        //           // ),
-                        //         ],
-                        //       ),
-                        //       Container(
-                        //         padding: const EdgeInsets.symmetric(
-                        //           horizontal: 8,
-                        //           vertical: 5,
-                        //         ),
-                        //         decoration: BoxDecoration(
-                        //           color: AppColors.primary.withValues(
-                        //             alpha: 0.08,
-                        //           ),
-                        //           borderRadius: BorderRadius.circular(8),
-                        //           border: Border.all(
-                        //             color: AppColors.primary.withValues(
-                        //               alpha: 0.2,
-                        //             ),
-                        //           ),
-                        //         ),
-                        //         child: Column(
-                        //           crossAxisAlignment: CrossAxisAlignment.end,
-                        //           children: [
-                        //             Text(
-                        //               // '${widget.pricePerUnit} / ${widget.unit}',
-                        //               '${getCurrencySymbol(widget.currency)} ${widget.pricePerUnit} / ${widget.unit ?? Translate.t("homeScreen.kg")}',
-                        //               style: AppTextThemes
-                        //                   .getLightTextTheme
-                        //                   .labelLarge
-                        //                   ?.copyWith(
-                        //                     color: AppColors.primary,
-                        //                     fontWeight: FontWeight.w700,
-                        //                   ),
-                        //             ),
-                        //           ],
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // ),
-                      ],
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: widget.high
-                                        ? AppColors.error.withValues(alpha: 0.2)
-                                        : null,
-                                    border: Border.all(
-                                      color: widget.high
-                                          ? AppColors.error
-                                          : AppColors.buyerColor.withValues(
-                                              alpha: 0.0,
-                                            ),
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      widget.high
-                                          ? Icon(
-                                              Icons.anchor,
-                                              color: AppColors.buyerColor,
-                                              size: 17,
-                                              fontWeight: FontWeight.bold,
-                                            )
-                                          : Icon(
-                                              Icons.location_on,
-                                              color: AppColors.buyerColor,
-                                              size: 17,
-                                            ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        widget.high
-                                            ? "High Sea"
-                                            : widget.location,
-                                        style: widget.high
-                                            ? AppTextThemes
-                                                  .getLightTextTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: AppColors.error,
-                                                    fontWeight: FontWeight.w700,
-                                                  )
-                                            : AppTextThemes
-                                                  .getLightTextTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    color: AppColors.buyerColor,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isStock
-                                      ? AppColors.buyerCardAccent.withValues(
-                                          alpha: 0.08,
-                                        )
-                                      : AppColors.sellerCardAccent.withValues(
-                                          alpha: 0.08,
-                                        ),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isStock
-                                        ? AppColors.buyerCardAccent.withValues(
-                                            alpha: 0.2,
-                                          )
-                                        : AppColors.sellerCardAccent.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      isStock
-                                          ? Translate.t("homeScreen.stock")
-                                          : Translate.t(
-                                              "homeScreen.requirement",
-                                            ),
-                                      style: AppTextThemes
-                                          .getLightTextTheme
-                                          .labelLarge
-                                          ?.copyWith(
-                                            color: isStock
-                                                ? AppColors.buyerColor
-                                                : AppColors.merchantColor,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.accent.withValues(alpha: 0.2),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
+                              const SizedBox(height: 4),
+                              // Posted by metadata
                               Text(
-                                // '${widget.pricePerUnit} / ${widget.unit}',
-                                '${getCurrencySymbol(widget.currency)} ${widget.pricePerUnit} / ${widget.unit ?? Translate.t("homeScreen.kg")}',
-                                style: AppTextThemes.getLightTextTheme.labelLarge
-                                    ?.copyWith(
-                                      color: AppColors.accent,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                "${Translate.t("homeScreen.PostedBy")} : ${widget.name}",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textHintDark,
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    // Row(
-                    //   crossAxisAlignment: CrossAxisAlignment.center,
-                    //   children: [
-                    //     Icon(
-                    //       Icons.person,
-                    //       size: 16,
-                    //       color: AppColors.textHintDark,
-                    //     ),
-                    //     const SizedBox(height: 4),
-                    //     Text(
-                    //       "${Translate.t("homeScreen.PostedBy")} :",
-                    //       style: AppTextThemes.getLightTextTheme.labelMedium
-                    //           ?.copyWith(
-                    //             color: AppColors.textHintDark,
-                    //             fontWeight: FontWeight.w600,
-                    //             letterSpacing: 0.3,
-                    //           ),
-                    //     ),
-                    //     const SizedBox(height: 4),
-                    //     Text(
-                    //       widget.name,
-                    //       style: AppTextThemes.getLightTextTheme.bodyMedium
-                    //           ?.copyWith(
-                    //             color: AppColors.textPrimary,
-                    //             fontWeight: FontWeight.w700,
-                    //           ),
-                    //     ),
-                    //   ],
-                    // ),
+                    const SizedBox(height: 12),
+
+                    // LOWER DIVIDER
+                    Container(
+                      height: 1,
+                      color: const Color(0xFFF2F2F2),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // BOTTOM ROW: Price & Actions
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Available Till
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        // Pricing info
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Text(
-                            //   '${widget.qtylabel} : ',
-                            //   style: AppTextThemes.getLightTextTheme.labelMedium
-                            //       ?.copyWith(
-                            //         color: AppColors.textHintDark,
-                            //         fontWeight: FontWeight.w500,
-                            //         letterSpacing: 0.3,
-                            //       ),
-                            // ),
-                            Text(
-                              widget.quantity,
-                              style: AppTextThemes.getLightTextTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w700,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  "$symbol${widget.pricePerUnit}",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: isStock ? AppColors.secondary : AppColors.primary,
                                   ),
-                            ),
-                            //   ],
-                            // ),
-                            // // Icon(
-                            // //   Icons.open_in_new,
-                            // //   size: 16,
-                            // //   color: AppColors.textHintDark,
-                            // // ),
-                            // Row(
-                            //   crossAxisAlignment: CrossAxisAlignment.center,
-                            //   children: [
-                            //     Icon(
-                            //       Icons.calendar_month_outlined,
-                            //       size: 16,
-                            //       color: AppColors.textHintDark,
-                            //     ),
-                            //     Text(
-                            //       "${Translate.t("homeScreen.Until")} :",
-                            //       style: AppTextThemes.getLightTextTheme.labelMedium
-                            //           ?.copyWith(
-                            //             color: AppColors.textHintDark,
-                            //             fontWeight: FontWeight.w500,
-                            //             letterSpacing: 0.3,
-                            //           ),
-                            //     ),
-                            const SizedBox(width: 8),
-                            Text(
-                              widget.qtyavailablelabel,
-                              style: AppTextThemes.getLightTextTheme.labelMedium
-                                  ?.copyWith(
+                                ),
+                                Text(
+                                  " / ${widget.unit ?? Translate.t("homeScreen.kg")}",
+                                  style: TextStyle(
+                                    fontSize: 11,
                                     color: AppColors.textHintDark,
                                     fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.3,
                                   ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              widget.availableFrom,
-                              style: AppTextThemes.getLightTextTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w600,
+                            if (priceVal > 0)
+                              Row(
+                                children: [
+                                  Text(
+                                    "$symbol${crossedPrice.toStringAsFixed(0)}",
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF878787),
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
                                   ),
-                            ),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    "20% OFF",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF388E3C),
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                           ],
+                        ),
+
+                        // Action Button
+                        ElevatedButton(
+                          onPressed: widget.onTap,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isStock ? AppColors.secondary : AppColors.primary,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            minimumSize: const Size(90, 36),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isStock ? "Bid Now" : "Quote",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 10,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -570,25 +419,25 @@ class _MarketplaceListingCardState extends State<MarketplaceListingCard>
                 ),
               ),
 
-              if (widget.badge != null)
+              // Corner ribbon if high priority
+              if (widget.high)
                 Positioned(
-                  top: 12,
-                  right: 12,
+                  top: 0,
+                  right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFBF360C),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(8),
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: widget.badgeColor ?? AppColors.primary,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      widget.badge!,
-                      style: AppTextThemes.getLightTextTheme.labelMedium?.copyWith(
+                    child: const Text(
+                      "HIGH SEA",
+                      style: TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),

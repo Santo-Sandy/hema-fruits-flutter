@@ -487,12 +487,11 @@ class _AppHeaderState extends State<AppHeader> {
                     right: 6,
                     top: 6,
                     child: Container(
-                      width: 20,
+                      width: 18,
                       height: 18,
                       decoration: BoxDecoration(
                         color: AppColors.error,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.error, width: 1.5),
                       ),
                       child: Center(
                         child: Text(
@@ -500,7 +499,7 @@ class _AppHeaderState extends State<AppHeader> {
                               ? '9+'
                               : '${notificationData.length}',
                           style: TextStyle(
-                            fontSize: context.fontSizeXSmall,
+                            fontSize: 9,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),

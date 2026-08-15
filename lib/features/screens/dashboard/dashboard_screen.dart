@@ -405,169 +405,193 @@ class _WelcomeHeaderState extends State<WelcomeHeader> {
     );
   }
 
+  Widget _buildQueueBadge() {
+    return ValueListenableBuilder<({bool uploading, int count})>(
+      valueListenable: OfflineQueueService.uploadState,
+      builder: (context, uploadState, _) {
+        return ValueListenableBuilder<int>(
+          valueListenable: OfflineQueueService.queueChanged,
+          builder: (context, _, __) {
+            final allPending = OfflineQueueService.instance.getPendingRequestsSync();
+            final pendingCount = uploadState.uploading
+                ? uploadState.count
+                : allPending.where(OfflineQueueService.isVisible).length;
+
+            if (pendingCount <= 0) return const SizedBox();
+
+            return GestureDetector(
+              onTap: () => context.pushNamed(RouteName.offlineQueue),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (uploadState.uploading) ...[
+                      const SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Posting...',
+                        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ] else ...[
+                      const Icon(Icons.schedule_rounded, color: Colors.white, size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$pendingCount pending',
+                        style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    debugPrint("WelcomeHeader Build");
-
+    final points = userData?['points'] ?? 0;
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 12,
-      ).copyWith(bottom: 10),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          colors: [AppColors.primaryDark, AppColors.primary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryDark,
-            AppColors.primaryDark.withValues(alpha: 0.85),
-          ],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.2),
+            color: AppColors.primary.withOpacity(0.2),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: () => context.pushNamed(RouteName.profile),
-            child: RepaintBoundary(
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    width: 1.5,
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => context.pushNamed(RouteName.profile),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(26),
+                    child: _profileAvatar(),
                   ),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: _profileAvatar(),
-                ),
               ),
-            ),
-          ),
-
-          const SizedBox(width: 16),
-
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  Translate.t("dashboard.welcome"),
-                  style:
-                      AppTypography.responsive(
-                        context,
-                        baseSize: 16,
-                        tabletSize: 18,
-                        desktopSize: 20,
-                      ).copyWith(
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      Translate.t("dashboard.welcome"),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      username,
+                      style: const TextStyle(
+                        fontSize: 18,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
                       ),
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: 6),
-
-                GestureDetector(
-                  onTap: () => context.pushNamed(RouteName.profile),
-                  child: Text(
-                    username,
-                    style: AppTextThemes.getLightTextTheme.titleMedium!.copyWith(
-                      color: AppColors.backgroundLight,
+              ),
+              _buildQueueBadge(),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.18)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.stars_rounded, color: Color(0xFFFFB300), size: 24),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "HEMA WALLET BALANCE",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "$points Credits",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                  onPressed: () => context.push(RoutePath.creditpoint),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    "Top Up",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-          // Queue notifier
-          ValueListenableBuilder<({bool uploading, int count})>(
-            valueListenable: OfflineQueueService.uploadState,
-            builder: (context, uploadState, _) {
-              return ValueListenableBuilder<int>(
-                valueListenable: OfflineQueueService.queueChanged,
-                builder: (context, _, __) {
-                  // Read synchronously from Hive cache — no async needed
-                  final allPending = OfflineQueueService.instance
-                      .getPendingRequestsSync();
-                  final pendingCount = uploadState.uploading
-                      ? uploadState.count
-                      : allPending.where(OfflineQueueService.isVisible).length;
-
-                  if (pendingCount <= 0) return const SizedBox();
-
-                  return GestureDetector(
-                    onTap: () => context.pushNamed(RouteName.offlineQueue),
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (uploadState.uploading) ...[
-                            SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Posting $pendingCount...',
-                              style: AppTextThemes.getLightTextTheme.labelSmall!
-                                  .copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ] else ...[
-                            const Icon(
-                              Icons.schedule_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '$pendingCount pending',
-                              style: AppTextThemes.getLightTextTheme.labelSmall!
-                                  .copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
           ),
         ],
       ),
