@@ -24,22 +24,22 @@ class _AppFooterState extends State<AppFooter> {
     _NavItem(
       icon: Icons.home_outlined,
       activeIcon: Icons.home,
-      label: Translate.t("navBar.home"),
+      label: "Home",
     ),
     _NavItem(
-      icon: Icons.dashboard_outlined,
-      activeIcon: Icons.dashboard,
-      label: Translate.t("navBar.Dashboard"),
+      icon: Icons.shopping_basket_outlined,
+      activeIcon: Icons.shopping_basket,
+      label: "Basket",
     ),
     _NavItem(
-      icon: Icons.timeline_outlined,
-      activeIcon: Icons.timeline,
-      label: Translate.t("navBar.MyActivity"),
+      icon: Icons.local_shipping_outlined,
+      activeIcon: Icons.local_shipping,
+      label: "Orders",
     ),
     _NavItem(
-      icon: Icons.crisis_alert_rounded,
-      activeIcon: Icons.crisis_alert_outlined,
-      label: Translate.t("navBar.Bidding"),
+      icon: Icons.person_outline,
+      activeIcon: Icons.person,
+      label: "Account",
     ),
   ];
 

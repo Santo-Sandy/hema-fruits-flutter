@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:hema_fruits/core/router/router_setup.dart';
 import 'package:hema_fruits/core/services/offline_queue_service.dart';
-import 'package:hema_fruits/core/utils/responsive/app_breakpoints.dart';
+import 'package:hema_fruits/core/utils/Responsive/app_breakpoints.dart';
 import 'package:hema_fruits/features/layouts/tablet_sidebar.dart';
 import 'package:hema_fruits/shared/theme/app_colors.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -22,9 +22,9 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   static const _tabPaths = [
     RoutePath.home,
-    RoutePath.dashboard,
-    RoutePath.myActivity,
-    RoutePath.salesBuyBidding,
+    '/ecommerce/cart',
+    '/ecommerce/orders/my-orders',
+    RoutePath.profile,
   ];
 
   static const _lockedPaths = [

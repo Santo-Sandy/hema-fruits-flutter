@@ -25,6 +25,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
+import 'package:hema_fruits/core/providers/ecommerce_provider.dart';
+
 // Global context variables
 BuildContext? globalContext;
 final Map<String, BuildContext> screenContexts = {};
@@ -111,6 +113,8 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => CountryProvider()),
+        ChangeNotifierProvider(create: (_) => EcommCatalogProvider()),
+        ChangeNotifierProvider(create: (_) => EcommCartProvider()),
         ChangeNotifierProxyProvider<ProfileProvider, SwapUserProvider>(
           create: (_) => SwapUserProvider(),
           update: (_, userProfileProvider, swapProvider) {

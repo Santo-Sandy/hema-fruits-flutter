@@ -157,7 +157,7 @@ class _MarketplaceListingCardState extends State<MarketplaceListingCard>
           borderRadius: BorderRadius.circular(16),
           child: Stack(
             children: [
-              // Flipkart-style left accent indicator tag
+              // Left accent indicator tag
               Positioned(
                 left: 0,
                 top: 0,
