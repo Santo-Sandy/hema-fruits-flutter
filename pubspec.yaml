@@ -67,9 +67,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/market-place-logo.png"
+  image_path: "assets/icons/hema-logo.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/icons/market-place-logo.png"
+  adaptive_icon_foreground: "assets/icons/hema-logo.png"
 
 flutter:
   uses-material-design: true

@@ -70,6 +70,38 @@ class EcommCatalogProvider extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
+  // ── CRUD HELPERS ─────────────────────────────────────────────────────────
+
+  Future<bool> addCategory(Map<String, dynamic> categoryData) async {
+    final success = await _repository.createCategory(categoryData);
+    if (success) await initCatalog();
+    return success;
+  }
+
+  Future<bool> deleteCategory(String id) async {
+    final success = await _repository.deleteCategory(id);
+    if (success) await initCatalog();
+    return success;
+  }
+
+  Future<bool> addProduct(Map<String, dynamic> productData) async {
+    final success = await _repository.createProduct(productData);
+    if (success) await fetchFilteredProducts();
+    return success;
+  }
+
+  Future<bool> updateProduct(String id, Map<String, dynamic> productData) async {
+    final success = await _repository.updateProduct(id, productData);
+    if (success) await fetchFilteredProducts();
+    return success;
+  }
+
+  Future<bool> deleteProduct(String id) async {
+    final success = await _repository.deleteProduct(id);
+    if (success) await fetchFilteredProducts();
+    return success;
+  }
 }
 
 class EcommCartProvider extends ChangeNotifier {
@@ -137,7 +169,8 @@ class EcommCartProvider extends ChangeNotifier {
     if (index >= 0) {
       _items[index].quantity += delta;
       if (_items[index].quantity <= 0) {
-        _items.removeAt(index);
+        final removed = _items.removeAt(index);
+        _repository.removeCartItem(removed.variantId);
       }
       notifyListeners();
       _syncCartWithBackend();
@@ -146,8 +179,8 @@ class EcommCartProvider extends ChangeNotifier {
 
   void removeItem(String variantId) {
     _items.removeWhere((element) => element.variantId == variantId);
+    _repository.removeCartItem(variantId);
     notifyListeners();
-    _syncCartWithBackend();
   }
 
   void applyCoupon(String couponCode) {
@@ -168,6 +201,7 @@ class EcommCartProvider extends ChangeNotifier {
     _items.clear();
     _appliedCoupon = '';
     _couponDiscount = 0.0;
+    _repository.clearCart();
     notifyListeners();
   }
 

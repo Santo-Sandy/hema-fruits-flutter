@@ -5,6 +5,8 @@ import 'package:dio/dio.dart';
 class EcommerceRepository {
   final Dio _dio = AppConfig.instance.dio;
 
+  // ── CATEGORY APIs ─────────────────────────────────────────────────────────
+
   Future<List<StoreCategory>> getCategories() async {
     try {
       final res = await _dio.get('/api/v1/store/categories');
@@ -52,6 +54,26 @@ class EcommerceRepository {
     ];
   }
 
+  Future<bool> createCategory(Map<String, dynamic> categoryData) async {
+    try {
+      final res = await _dio.post('/api/v1/store/categories', data: categoryData);
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteCategory(String id) async {
+    try {
+      final res = await _dio.delete('/api/v1/store/categories/$id');
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ── PRODUCT APIs ──────────────────────────────────────────────────────────
+
   Future<List<StoreProduct>> getProducts({String? categoryId, String? search, bool? organic}) async {
     try {
       final res = await _dio.get('/api/v1/store/products', queryParameters: {
@@ -68,6 +90,35 @@ class EcommerceRepository {
     }
     return getFallbackProducts();
   }
+
+  Future<bool> createProduct(Map<String, dynamic> productData) async {
+    try {
+      final res = await _dio.post('/api/v1/store/products', data: productData);
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateProduct(String id, Map<String, dynamic> productData) async {
+    try {
+      final res = await _dio.put('/api/v1/store/products/$id', data: productData);
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteProduct(String id) async {
+    try {
+      final res = await _dio.delete('/api/v1/store/products/$id');
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ── BANNER APIs ───────────────────────────────────────────────────────────
 
   Future<List<StoreBanner>> getBanners() async {
     try {
@@ -107,6 +158,8 @@ class EcommerceRepository {
     ];
   }
 
+  // ── CART APIs ─────────────────────────────────────────────────────────────
+
   Future<CartSummaryModel?> getCart() async {
     try {
       final res = await _dio.get('/api/v1/store/cart');
@@ -130,6 +183,26 @@ class EcommerceRepository {
     }
     return null;
   }
+
+  Future<bool> removeCartItem(String variantId) async {
+    try {
+      final res = await _dio.delete('/api/v1/store/cart/item/$variantId');
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> clearCart() async {
+    try {
+      final res = await _dio.delete('/api/v1/store/cart');
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ── ORDER APIs ────────────────────────────────────────────────────────────
 
   Future<StoreOrderModel?> placeOrder({
     required String paymentMethod,
@@ -166,6 +239,28 @@ class EcommerceRepository {
       deliveryAgentName: 'Ramesh (Express Delivery)',
       deliveryAgentPhone: '+91 98123 45678',
     );
+  }
+
+  Future<List<StoreOrderModel>> getUserOrders() async {
+    try {
+      final res = await _dio.get('/api/v1/store/orders');
+      if (res.data != null && res.data['orders'] != null) {
+        final List list = res.data['orders'];
+        return list.map((e) => StoreOrderModel.fromJson(e)).toList();
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return [];
+  }
+
+  Future<bool> cancelOrder(String orderId) async {
+    try {
+      final res = await _dio.delete('/api/v1/store/orders/$orderId');
+      return res.data != null && res.data['success'] == true;
+    } catch (e) {
+      return false;
+    }
   }
 
   List<StoreProduct> getFallbackProducts() {

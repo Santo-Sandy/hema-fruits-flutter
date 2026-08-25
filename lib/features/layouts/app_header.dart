@@ -1,22 +1,17 @@
-import 'package:hema_fruits/core/providers/notification_provider.dart';
-import 'package:hema_fruits/core/providers/swap_user_provider.dart';
-import 'package:hema_fruits/core/providers/user_provider.dart';
-import 'package:hema_fruits/core/router/router_setup.dart';
-import 'package:hema_fruits/core/services/filter_request.dart';
-import 'package:hema_fruits/core/services/translate.dart';
-import 'package:hema_fruits/core/utils/Responsive/responsivea_context.dart';
-import 'package:hema_fruits/core/utils/context_manager.dart';
-import 'package:hema_fruits/features/screens/creditPoint/firstReward_credit.dart';
-import 'package:hema_fruits/features/screens/notification/notification_history.dart';
-import 'package:hema_fruits/features/screens/profile/menu.dart';
-import 'package:hema_fruits/features/screens/user_profile/user_profile.dart';
-import 'package:hema_fruits/shared/local_storage/user_data.dart';
-import 'package:hema_fruits/shared/theme/app_colors.dart';
-import 'package:hema_fruits/shared/widgets/toast_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../shared/widgets/widgets.dart';
+
+import 'package:hema_fruits/core/providers/notification_provider.dart';
+import 'package:hema_fruits/core/providers/user_provider.dart';
+import 'package:hema_fruits/core/router/router_setup.dart';
+import 'package:hema_fruits/core/services/auth_service/auth_service.dart';
+import 'package:hema_fruits/core/services/filter_request.dart';
+import 'package:hema_fruits/core/services/translate.dart';
+import 'package:hema_fruits/core/utils/Responsive/responsivea_context.dart';
+import 'package:hema_fruits/features/screens/notification/notification_history.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
 
 class AppHeader extends StatefulWidget implements PreferredSizeWidget {
   const AppHeader({super.key});
@@ -31,142 +26,59 @@ class AppHeader extends StatefulWidget implements PreferredSizeWidget {
 class _AppHeaderState extends State<AppHeader> {
   Map<String, dynamic> userData = {};
   List<dynamic> notificationData = [];
-  Map<String, dynamic> user = {};
-  String userId = "";
-  String header = "Welcome";
-  String? _previousRole;
-  String currentRole = "buyer";
 
   @override
   void initState() {
     super.initState();
-    getuser();
-    fetchnotification();
+    _fetchUserData();
+    _fetchNotificationData();
   }
 
-  Future<void> fetchnotification() async {
+  Future<void> _fetchNotificationData() async {
     if (!mounted) return;
-
     try {
       final userData = await SecureStorageService.getUserData();
       final userId = userData['_id'];
-
-      final request = FilterRequest(userId: userId);
-      final payload = request.getNotification();
-
-      final provider = context.read<NotificationProvider>();
-
-      await provider.fetch(
-        endpoint: "dataset/data/notifications",
-        filterPayload: payload,
-      );
+      if (userId != null && userId.toString().isNotEmpty) {
+        final request = FilterRequest(userId: userId.toString());
+        final payload = request.getNotification();
+        final provider = context.read<NotificationProvider>();
+        await provider.fetch(
+          endpoint: "dataset/data/notifications",
+          filterPayload: payload,
+        );
+      }
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint("Notification fetch error: $e");
     }
   }
 
-  Future<void> getuser() async {
-    userData = await SecureStorageService.getUserData();
-    final userId = userData['_id'];
-    FilterRequest request = FilterRequest(userId: userId);
-    context.read<ProfileProvider>().userprofilefetch(
-      endpoint: "entities/filter/users",
-      filterPayload: request.getuserprofile(),
-    );
+  Future<void> _fetchUserData() async {
+    try {
+      userData = await SecureStorageService.getUserData();
+      final userId = userData['_id'];
+      if (userId != null && userId.toString().isNotEmpty) {
+        final request = FilterRequest(userId: userId.toString());
+        context.read<ProfileProvider>().userprofilefetch(
+          endpoint: "entities/filter/users",
+          filterPayload: request.getuserprofile(),
+        );
+      }
+    } catch (e) {
+      debugPrint("User data fetch error: $e");
+    }
   }
 
   String getHeaderFromPath(String path) {
-    // Activity
-    if (path.startsWith('/activity/post')) {
-      return Translate.t("header.my_posts");
-    }
-    if (path.startsWith('/activity/responses')) {
-      return Translate.t("header.responses");
-    }
     if (path.startsWith('/activity')) return Translate.t("header.my_activity");
-
-    // Enquiry
-    if (path.startsWith('/enquiry/post')) {
-      return Translate.t("header.post_enquiries");
-    }
-    if (path.startsWith('/enquiry/requirement')) {
-      return Translate.t("header.requirement_enquiries");
-    }
-    if (path.startsWith('/enquiry')) return Translate.t("header.enquiries");
-
-    // Posts
-    if (path.contains('/posts/') && path.endsWith('/edit')) {
-      return Translate.t("header.edit_post");
-    }
-    if (path.contains('/posts/') && !path.endsWith('/edit')) {
-      return Translate.t("header.post_details");
-    }
-    if (path.startsWith('/newposts')) {
-      return Translate.t("header.create_post");
-    }
-
-    if (path.startsWith('/posts') ||
-        path.startsWith('/sellerposts') ||
-        path.startsWith('/mysellerpostview') ||
-        path.startsWith('/mybuyerpostview')) {
-      return Translate.t("header.posts");
-    }
-    if (path.startsWith('/viewscreen') ||
-        path.startsWith('/sellerviewscreen') ||
-        path.startsWith('/buyerresponseviewscreen') ||
-        path.startsWith('/sellerresponseviewscreen')) {
-      return Translate.t("header.posts");
-    }
-    // Requirements
-    if (path.contains('/requirements/') && path.endsWith('/edit')) {
-      return Translate.t("header.edit_requirement");
-    }
-    if (path.contains('/requirements/') && !path.endsWith('/edit')) {
-      return Translate.t("header.requirement_details");
-    }
-    if (path.startsWith('/requirements/create')) {
-      return Translate.t("header.create_requirement");
-    }
-    if (path.startsWith('/requirements')) {
-      return Translate.t("header.requirements");
-    }
-
-    if (path.startsWith('/newRequirement')) {
-      return Translate.t("header.new_requirement");
-    }
-
-    // Profile
-    if (path.startsWith('/personal-info')) {
-      return Translate.t("header.Settings");
-    }
-    if (path.startsWith('/business-info')) {
-      return Translate.t("header.Settings");
-    }
-    if (path.startsWith('/subscription')) {
-      return Translate.t("header.subscription");
-    }
-    if (path.startsWith('/notifications')) {
-      return Translate.t("header.notifications");
-    }
-    if (path.startsWith('/userprofile')) {
-      return Translate.t("header.userprofile");
-    }
-    if (path.startsWith('/profile')) return Translate.t("header.profile");
-    if (path.startsWith('/salesbuybidding')) {
-      return Translate.t("header.salesbidding");
-    }
-    // Main
     if (path.startsWith('/dashboard')) return Translate.t("header.dashboard");
-    if (path.startsWith('/home')) return Translate.t("header.marketplace");
-    if (path.startsWith('/settings') || path.startsWith("/menu")) {
-      return Translate.t("header.Settings");
-    }
-    if (path.startsWith('/blocked')) return Translate.t("header.Settings");
-    if (path.startsWith('/creditpoint')) {
-      return Translate.t("header.CreditPoints");
-    }
-
-    return Translate.t("header.marketplace");
+    if (path.startsWith('/marketplace')) return Translate.t("header.posts");
+    if (path.startsWith('/salesbuybidding')) return Translate.t("header.salesbidding");
+    if (path.startsWith('/creditpoint')) return Translate.t("header.CreditPoints");
+    if (path.startsWith('/profile')) return Translate.t("header.profile");
+    if (path.startsWith('/settings')) return Translate.t("header.Settings");
+    if (path.startsWith('/menu')) return Translate.t("header.Settings");
+    return "Fresh Produce Marketplace";
   }
 
   void _openNotificationDrawer() {
@@ -175,9 +87,7 @@ class _AppHeaderState extends State<AppHeader> {
       showGeneralDialog(
         context: context,
         barrierDismissible: true,
-        barrierLabel: MaterialLocalizations.of(
-          context,
-        ).modalBarrierDismissLabel,
+        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
         barrierColor: Colors.black54,
         transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (context, animation, secondaryAnimation) {
@@ -185,11 +95,9 @@ class _AppHeaderState extends State<AppHeader> {
             alignment: Alignment.centerRight,
             child: Material(
               child: SizedBox(
-                width: screenWidth < 1200
-                    ? screenWidth * 0.75
-                    : screenWidth * 0.50,
+                width: screenWidth < 1200 ? screenWidth * 0.75 : screenWidth * 0.50,
                 height: MediaQuery.of(context).size.height,
-                child: NotificationHistoryPage(),
+                child: const NotificationHistoryPage(),
               ),
             ),
           );
@@ -214,264 +122,164 @@ class _AppHeaderState extends State<AppHeader> {
     }
   }
 
-  void _openProfileDrawer() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // if (screenWidth > 767) {
-    //   showGeneralDialog(
-    //     context: context,
-    //     barrierDismissible: true,
-    //     barrierLabel: MaterialLocalizations.of(
-    //       context,
-    //     ).modalBarrierDismissLabel,
-    //     barrierColor: Colors.black54,
-    //     transitionDuration: const Duration(milliseconds: 300),
-    //     pageBuilder: (context, animation, secondaryAnimation) {
-    //       return Align(
-    //         alignment: Alignment.centerRight,
-    //         child: Material(
-    //           child: SizedBox(
-    //             width: screenWidth < 1200
-    //                 ? screenWidth * 0.75
-    //                 : screenWidth * 0.50,
-    //             height: MediaQuery.of(context).size.height,
-    //             child: AccountScreen(),
-    //           ),
-    //         ),
-    //       );
-    //     },
-    //     transitionBuilder: (context, animation, secondaryAnimation, child) {
-    //       return SlideTransition(
-    //         position: Tween<Offset>(
-    //           begin: const Offset(1, 0),
-    //           end: Offset.zero,
-    //         ).animate(animation),
-    //         child: child,
-    //       );
-    //     },
-    //   );
-    // } else {
-    final currentLocation = GoRouterState.of(context).uri.toString();
-    if (currentLocation == RoutePath.profile) {
-      context.pop();
-    } else {
-      context.pushNamed(RouteName.profile);
-    }
-    // }
-  }
-
-  void _openMenuDrawer() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth > 767) {
-      showGeneralDialog(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: MaterialLocalizations.of(
-          context,
-        ).modalBarrierDismissLabel,
-        barrierColor: Colors.black54,
-        transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return Align(
-            alignment: Alignment.centerRight,
-            child: Material(
-              child: SizedBox(
-                width: screenWidth < 1200
-                    ? screenWidth * 0.75
-                    : screenWidth * 0.50,
-                height: MediaQuery.of(context).size.height,
-                child: Menu(),
-              ),
-            ),
-          );
-        },
-        transitionBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          );
-        },
-      );
-    } else {
-      final currentLocation = GoRouterState.of(context).uri.toString();
-      if (currentLocation == RoutePath.menu) {
-        context.pop();
-      } else {
-        context.pushNamed(RouteName.menu);
-      }
+  void _handleMenuSelection(BuildContext context, String value) {
+    switch (value) {
+      case 'profile':
+        context.push(RoutePath.profile);
+        break;
+      case 'points':
+        context.push(RoutePath.creditpoint);
+        break;
+      case 'settings':
+        context.push(RoutePath.settings);
+        break;
+      case 'signout':
+        _showSignOutDialog(context);
+        break;
     }
   }
 
-  void showAnimatedToast(
-    BuildContext context, {
-    required String message,
-    required IconData icon,
-    Color? color,
-  }) {
-    final overlay = Overlay.of(context, rootOverlay: true);
-    if (overlay == null) return;
-    final resolvedColor = color ?? AppColors.primary;
-    late OverlayEntry overlayEntry;
-
-    overlayEntry = OverlayEntry(
-      builder: (context) {
-        return AnimatedToastWidget(
-          message: message,
-          icon: icon,
-          color: resolvedColor,
-          onDismiss: () => overlayEntry.remove(),
+  Future<void> _showSignOutDialog(BuildContext context) async {
+    final authService = context.read<AuthService>();
+    final router = GoRouter.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        bool isLoading = false;
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: isLoading ? null : const Text('Confirm Sign Out'),
+              content: isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: Color(0xFF0F9D58)),
+                          SizedBox(width: 16),
+                          Text('Signing out...'),
+                        ],
+                      ),
+                    )
+                  : const Text('Are you sure you want to sign out from Hema Fruits Marketplace?'),
+              actions: isLoading
+                  ? null
+                  : [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () async {
+                          setState(() => isLoading = true);
+                          try {
+                            await authService.signOut();
+                          } catch (e) {
+                            debugPrint("Sign out error: $e");
+                          } finally {
+                            await SecureStorageService.clearAll();
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
+                            router.go('/login');
+                          }
+                        },
+                        child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+            );
+          },
         );
       },
     );
-
-    overlay.insert(overlayEntry);
   }
 
-  Future<void> onSwap() async {
-    final role = currentRole;
-    final currentcontext = ContextManager().currentContext;
-    // navigatorKey.currentContext;
-    if (role == 'processor') {
-      showAnimatedToast(
-        currentcontext!,
-        message: Translate.t("common.buyer"),
-        icon: Icons.shopping_cart_rounded,
-        color: Colors.black,
-      );
-    } else {
-      showAnimatedToast(
-        currentcontext!,
-        message: Translate.t("common.seller"),
-        icon: Icons.store_rounded,
-        color: Colors.white,
-      );
-    }
-  }
-
-  void _navigateToReward(int points) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FirstLoginRewardScreen(
-          rewardPoints: points,
-          onAutoDismiss: () {
-            Navigator.pop(context);
-            context.go(RoutePath.home);
-          },
-          onSubscribe: () {
-            Navigator.pop(context);
-            context.go(RoutePath.home);
-            context.push(RoutePath.creditpayment);
-          },
-          onSkip: () {
-            Navigator.pop(context);
-            context.go(RoutePath.home);
-          },
-        ),
+  PopupMenuItem<String> _buildPopupMenuItem({
+    required String value,
+    required IconData icon,
+    required String label,
+    required Color color,
+    bool isDestructive = false,
+  }) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 44,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: isDestructive ? AppColors.error : color),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isDestructive ? FontWeight.bold : FontWeight.w500,
+              color: isDestructive ? AppColors.error : AppColors.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('Header rebuilt');
+    final currentPath = GoRouterState.of(context).uri.toString();
+
     return Consumer2<ProfileProvider, NotificationProvider>(
       builder: (context, provider, notificationprovider, child) {
-        userData = provider.userprofile;
-        notificationData = notificationprovider.notifications;
+        final profile = provider.userprofile;
+        final notifications = notificationprovider.notifications;
+        final userName = profile['name']?.toString() ?? userData['name']?.toString() ?? 'Hema Fruits';
+
         return AppBar(
           backgroundColor: AppColors.appheader,
-          elevation: 0,
-          leading: GestureDetector(
-            onTap: _openProfileDrawer,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8, left: 8),
-              child: Container(
-                padding: const EdgeInsets.all(
-                  2,
-                ), // Space between avatar and border
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white, // Border color
-                    width: 2,
-                  ),
-                ),
-                child: AppAvatar(
-                  imageUrl: userData["profilePicture"],
-                  name: userData['name'] ?? 'S',
-                  radius: 18,
-                  backgroundColor: AppColors.primary, // 20% opacity
-                ),
+          elevation: 1,
+          leadingWidth: 44,
+          leading: Container(
+            margin: const EdgeInsets.only(left: 10),
+            child: const Center(
+              child: Icon(
+                Icons.shopping_basket_rounded,
+                color: Colors.white,
+                size: 26,
               ),
             ),
           ),
           title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              GestureDetector(
-                // onTap: () =>
-                //     Navigator.push(
-                //       context,
-                //       PageRouteBuilder(
-                //         pageBuilder: (context, animation, secondaryAnimation) =>
-                //             PaymentSuccessSplashScreen(
-                //               amount: 1000,
-                //               points: 500,
-                //               currency: "\$",
-                //             ),
-                //         transitionsBuilder:
-                //             (context, animation, secondaryAnimation, child) {
-                //               return FadeTransition(
-                //                 opacity: animation,
-                //                 child: child,
-                //               );
-                //             },
-                //         transitionDuration: const Duration(milliseconds: 300),
-                //       ),
-                //     ).then((_) {
-                //       if (mounted) {
-                //         context.pop();
-                //       }
-                //     }),
-                // onTap: () {
-                //   Navigator.push(
-                //     context,
-                //     MaterialPageRoute(
-                //       builder: (_) => FirstLoginRewardScreen(
-                //         rewardPoints: userData['points'],
-                //         onAutoDismiss: () {
-                //           Navigator.pop(context);
-                //           context.go(RoutePath.home);
-                //         },
-                //         onSubscribe: () {
-                //           Navigator.pop(context);
-                //           context.go(RoutePath.home);
-                //           context.push(RoutePath.creditpayment);
-                //         },
-                //         onSkip: () {
-                //           Navigator.pop(context);
-                //           context.go(RoutePath.home);
-                //         },
-                //       ),
-                //     ),
-                //   );
-                // },
-                child: Text(
-                  getHeaderFromPath(GoRouterState.of(context).uri.toString()),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: context.fontSizeMedium,
-                    color: AppColors.appheadertext,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'Hema Fruits Marketplace',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: context.fontSizeMedium,
+                  color: AppColors.appheadertext,
                 ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+              Text(
+                'Welcome, $userName • ${getHeaderFromPath(currentPath)}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white70,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
-          centerTitle: true,
           actions: [
+            // Notifications Icon
             Stack(
               alignment: Alignment.topRight,
               children: [
@@ -482,7 +290,7 @@ class _AppHeaderState extends State<AppHeader> {
                   ),
                   onPressed: _openNotificationDrawer,
                 ),
-                if (notificationData.isNotEmpty)
+                if (notifications.isNotEmpty)
                   Positioned(
                     right: 6,
                     top: 6,
@@ -492,13 +300,12 @@ class _AppHeaderState extends State<AppHeader> {
                       decoration: BoxDecoration(
                         color: AppColors.error,
                         shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
                       ),
                       child: Center(
                         child: Text(
-                          notificationData.length > 9
-                              ? '9+'
-                              : '${notificationData.length}',
-                          style: TextStyle(
+                          notifications.length > 9 ? '9+' : '${notifications.length}',
+                          style: const TextStyle(
                             fontSize: 9,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -510,131 +317,49 @@ class _AppHeaderState extends State<AppHeader> {
               ],
             ),
 
-            Consumer2<SwapUserProvider, ProfileProvider>(
-              builder: (context, swapProvider, profile, _) {
-                if (!swapProvider.showSwap) {
-                  return const SizedBox.shrink();
-                }
-                if (!swapProvider.showSwap) {
-                  return const SizedBox();
-                }
-                currentRole = swapProvider.swapedUser;
-
-                /// Update previous role safely
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted && _previousRole != currentRole) {
-                    setState(() {
-                      _previousRole = currentRole;
-                    });
-                  }
-                });
-
-                return ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 100),
-                  child: ProfileIconTabSwitcher(
-                    backgroundColor: AppColors.textHint,
-                    selectedIndex: currentRole == 'buyer' ? 0 : 1,
-                    onChanged: (index) async {
-                      try {
-                        currentRole = index == 1 ? 'buyer' : 'processor';
-                        final initialPage =
-                            profile.userprofile['initializer_screen'] ??
-                            "Marketplace";
-                        if (initialPage == "Dashboard") {
-                          context.go(RoutePath.dashboard);
-                        } else if (initialPage == "BiddingScreen") {
-                          context.go(RoutePath.home);
-                          context.push(RoutePath.salesBuyBidding);
-                        } else {
-                          context.go(RoutePath.home);
-                        }
-                        // swapProvider.toggleUser();
-                        await onSwap();
-                      } catch (e) {
-                        debugPrint("Swap failed: $e");
-                      }
-                    },
-                    icons: const [Icons.shopping_cart_outlined, Icons.store],
-                    labels: const ['Buyer', 'Merchant'],
-                  ),
-                  // ProfileTabSwitcher(
-                  //   backgroundColor:
-                  //       AppColors.textHint,
-                  //   tabs: const ['Buyer', 'Merchant'],
-                  //   selectedIndex:
-                  //       currentRole == 'buyer'
-                  //       ? 0
-                  //       : 1,
-                  //   onTabChanged: (index) async {
-                  //     try {
-                  //       currentRole = index == 1
-                  //           ? 'buyer'
-                  //           : 'processor';
-                  //       swapProvider.toggleUser();
-                  //       await onSwap();
-                  //     } catch (e) {
-                  //       debugPrint("Swap failed: $e");
-                  //     }
-                  //   },
-                  // ),
-                );
-              },
+            // Three-Dots Popup Menu Button (as requested by user)
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: AppColors.appheadertext,
+              ),
+              position: PopupMenuPosition.under,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              color: Colors.white,
+              elevation: 8,
+              onSelected: (value) => _handleMenuSelection(context, value),
+              itemBuilder: (context) => [
+                _buildPopupMenuItem(
+                  value: 'profile',
+                  icon: Icons.person_outline_rounded,
+                  label: Translate.t("profile.Personal"),
+                  color: AppColors.primary,
+                ),
+                _buildPopupMenuItem(
+                  value: 'points',
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: Translate.t("profile.GetPoint"),
+                  color: AppColors.secondary,
+                ),
+                _buildPopupMenuItem(
+                  value: 'settings',
+                  icon: Icons.settings_outlined,
+                  label: Translate.t("profile.Settings"),
+                  color: AppColors.secondary,
+                ),
+                const PopupMenuDivider(height: 1),
+                _buildPopupMenuItem(
+                  value: 'signout',
+                  icon: Icons.logout_rounded,
+                  label: Translate.t("profile.logout"),
+                  color: AppColors.error,
+                  isDestructive: true,
+                ),
+              ],
             ),
-
-            // context.isMobile
-            //     ? GestureDetector(
-            //         onTap: () {
-            //           final currentLocation = GoRouterState.of(
-            //             context,
-            //           ).uri.toString();
-            //           if (currentLocation == RoutePath.salesBuyBidding) {
-            //             context.pop();
-            //           } else {
-            //             context.pushNamed(RouteName.salesBuyBidding);
-            //           }
-            //         },
-            //         child: Padding(
-            //           padding: const EdgeInsets.only(right: 14, left: 4),
-            //           child: Icon(
-            //             Icons.crisis_alert_rounded,
-            //             color: AppColors.accent,
-            //           ),
-            //         ),
-            //       )
-            //     :
-            // context.isMobile
-            //     ? SizedBox()
-            //     : GestureDetector(
-            //         onTap: _openProfileDrawer,
-            //         child: Padding(
-            //           padding: const EdgeInsets.only(right: 8, left: 8),
-            //           child: AppAvatar(
-            //             imageUrl: userData["profilePicture"],
-            //             name: userData['name'] ?? 'S',
-            //             radius: 18,
-            //             backgroundColor: Colors.white.withAlpha(
-            //               51,
-            //             ), // 20% opacity
-            //           ),
-            //         ),
-            //       ),
-            IconButton(
-              onPressed: _openMenuDrawer,
-              icon: Icon(Icons.menu, color: AppColors.appheadertext),
-            ),
-            // Avatar
-            // GestureDetector(
-            //   onTap: _openProfileDrawer,
-            //   child: Padding(
-            //     padding: const EdgeInsets.only(right: 14, left: 4),
-            //     child: AppAvatar(
-            //       imageUrl: userData["profilePicture"],
-            //       name: userData['name'] ?? 'S',
-            //       radius: 18,
-            //       backgroundColor: Colors.white.withAlpha(51), // 20% opacity
-            //     ),
-            //   ),
-            // ),
+            const SizedBox(width: 4),
           ],
         );
       },

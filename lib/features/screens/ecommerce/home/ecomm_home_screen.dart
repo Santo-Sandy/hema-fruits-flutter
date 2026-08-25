@@ -24,25 +24,31 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final catalog = context.watch<EcommCatalogProvider>();
     final cart = context.watch<EcommCartProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFAFAFAF).withValues(alpha: 0.1),
+      backgroundColor: const Color(0xFFF5F7F5),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(130),
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF0F9D58), Color(0xFF1B5E20)],
+              colors: [Color(0xFF1E5E42), Color(0xFF13422E)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Column(
                 children: [
                   Row(
@@ -50,12 +56,12 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.location_on, color: Colors.amberAccent, size: 20),
+                        child: const Icon(Icons.location_on_rounded, color: Colors.amberAccent, size: 20),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -65,7 +71,7 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                                 'Deliver to HSR Layout, 560102',
                                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                               ),
-                              Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
+                              Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 18),
                             ],
                           ),
                           Text(
@@ -76,8 +82,8 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                       ),
                       const Spacer(),
                       IconButton(
-                        icon: const Icon(Icons.notifications_none, color: Colors.white),
-                        onPressed: () {},
+                        icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                        onPressed: () => context.push('/notifications'),
                       ),
                     ],
                   ),
@@ -89,22 +95,30 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: TextField(
                       controller: _searchController,
                       onChanged: (val) => catalog.setSearchQuery(val),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Search fresh apples, spinach, cashews...',
-                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey),
-                        prefixIcon: Icon(Icons.search, color: Color(0xFF0F9D58)),
-                        suffixIcon: Icon(Icons.mic, color: Colors.grey),
+                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF1E5E42)),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  catalog.setSearchQuery('');
+                                },
+                              )
+                            : const Icon(Icons.mic_none_rounded, color: Colors.grey),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                     ),
                   ),
@@ -115,69 +129,200 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
         ),
       ),
       body: catalog.isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0F9D58)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E5E42)))
           : Stack(
               children: [
-                SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 90),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Banner Slider
-                      if (catalog.banners.isNotEmpty)
-                        SizedBox(
-                          height: 140,
-                          child: PageView.builder(
-                            itemCount: catalog.banners.length,
-                            itemBuilder: (context, index) {
-                              final banner = catalog.banners[index];
-                              return Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      CachedNetworkImage(
-                                        imageUrl: banner.imageUrl,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) => Container(color: Colors.grey[200]),
-                                        errorWidget: (context, url, err) => Container(color: Colors.green[100]),
-                                      ),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
+                RefreshIndicator(
+                  color: const Color(0xFF1E5E42),
+                  onRefresh: () async {
+                    await catalog.initCatalog();
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 95),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Banner Slider
+                        if (catalog.banners.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 145,
+                            child: PageView.builder(
+                              itemCount: catalog.banners.length,
+                              itemBuilder: (context, index) {
+                                final banner = catalog.banners[index];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 4.0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        CachedNetworkImage(
+                                          imageUrl: banner.imageUrl,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) => Container(color: Colors.grey[200]),
+                                          errorWidget: (context, url, err) => Container(color: const Color(0xFFE8F5E9)),
+                                        ),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                                              begin: Alignment.centerLeft,
+                                              end: Alignment.centerRight,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      Positioned(
-                                        left: 16,
-                                        top: 20,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              banner.title,
-                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              banner.subtitle,
-                                              style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w600),
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF0F9D58),
-                                                borderRadius: BorderRadius.circular(14),
+                                        Positioned(
+                                          left: 16,
+                                          top: 20,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                banner.title,
+                                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                                               ),
-                                              child: const Text('SHOP NOW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                            ),
-                                          ],
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                banner.subtitle,
+                                                style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w600),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF1E5E42),
+                                                  borderRadius: BorderRadius.circular(14),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withValues(alpha: 0.2),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: const Text('SHOP NOW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+
+                        // Category Pills Header
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Explore Fresh Categories',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                              ),
+                              InkWell(
+                                onTap: () => catalog.toggleOrganicFilter(),
+                                borderRadius: BorderRadius.circular(16),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: catalog.isOrganicOnly ? const Color(0xFF1B5E20) : Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFF1E5E42), width: 1.2),
+                                    boxShadow: [
+                                      if (catalog.isOrganicOnly)
+                                        BoxShadow(
+                                          color: const Color(0xFF1B5E20).withValues(alpha: 0.3),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.eco, size: 14, color: catalog.isOrganicOnly ? Colors.amberAccent : const Color(0xFF1E5E42)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Organic Only',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: catalog.isOrganicOnly ? Colors.white : const Color(0xFF1E5E42),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Category Bar
+                        SizedBox(
+                          height: 95,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: catalog.categories.length,
+                            itemBuilder: (context, index) {
+                              final cat = catalog.categories[index];
+                              final isSelected = catalog.selectedCategoryId == cat.id;
+
+                              return GestureDetector(
+                                onTap: () => catalog.selectCategory(cat.id),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 85,
+                                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isSelected ? const Color(0xFF1E5E42) : Colors.grey.withValues(alpha: 0.15),
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: isSelected
+                                            ? const Color(0xFF1E5E42).withValues(alpha: 0.15)
+                                            : Colors.black.withValues(alpha: 0.03),
+                                        blurRadius: isSelected ? 8 : 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: CachedNetworkImage(
+                                          imageUrl: cat.iconUrl,
+                                          height: 40,
+                                          width: 40,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) => const Icon(Icons.shopping_basket, color: Color(0xFF1E5E42)),
+                                          errorWidget: (context, url, err) => const Icon(Icons.nature, color: Color(0xFF1E5E42)),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        cat.name,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                          color: isSelected ? const Color(0xFF1E5E42) : Colors.black87,
                                         ),
                                       ),
                                     ],
@@ -188,169 +333,96 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                           ),
                         ),
 
-                      // Category Pills Header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Explore Fresh Categories',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                        const SizedBox(height: 12),
+
+                        // Freshness Banner Tag
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
                             ),
-                            InkWell(
-                              onTap: () => catalog.toggleOrganicFilter(),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: catalog.isOrganicOnly ? const Color(0xFF1B5E20) : Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: const Color(0xFF0F9D58)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.eco, size: 14, color: catalog.isOrganicOnly ? Colors.white : const Color(0xFF0F9D58)),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Organic Only',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: catalog.isOrganicOnly ? Colors.white : const Color(0xFF0F9D58),
-                                      ),
-                                    ),
-                                  ],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber.shade400, width: 1),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.bolt, color: Colors.amber, size: 20),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Hema Guaranteed Freshness • Direct Farm Delivery',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
 
-                      // Category Bar
-                      SizedBox(
-                        height: 95,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          itemCount: catalog.categories.length,
-                          itemBuilder: (context, index) {
-                            final cat = catalog.categories[index];
-                            final isSelected = catalog.selectedCategoryId == cat.id;
+                        const SizedBox(height: 14),
 
-                            return GestureDetector(
-                              onTap: () => catalog.selectCategory(cat.id),
-                              child: Container(
-                                width: 85,
-                                margin: const EdgeInsets.symmetric(horizontal: 5),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected ? const Color(0xFF0F9D58) : Colors.grey.withValues(alpha: 0.2),
-                                    width: isSelected ? 1.5 : 1,
+                        // Product Grid or Empty State
+                        catalog.products.isEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.all(32.0),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(Icons.search_off_rounded, size: 48, color: Colors.grey[400]),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        'No matching fresh items found',
+                                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: CachedNetworkImage(
-                                        imageUrl: cat.iconUrl,
-                                        height: 42,
-                                        width: 42,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) => const Icon(Icons.shopping_basket, color: Colors.green),
-                                        errorWidget: (context, url, err) => const Icon(Icons.nature, color: Colors.green),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      cat.name,
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                        color: isSelected ? const Color(0xFF1B5E20) : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
+                              )
+                            : Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: catalog.products.length,
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 0.68,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    final product = catalog.products[index];
+                                    final variant = product.defaultVariant;
+
+                                    return ProductCardWidget(product: product, variant: variant, cart: cart);
+                                  },
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Flash Deals Badge Header
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 14),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF8E1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.amber),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.bolt, color: Colors.amber, size: 20),
-                            SizedBox(width: 6),
-                            Text(
-                              'Hema Guaranteed Freshness • Harvested Daily',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      // Product Grid
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                        child: GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: catalog.products.length,
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.68,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
-                          itemBuilder: (context, index) {
-                            final product = catalog.products[index];
-                            final variant = product.defaultVariant;
-
-                            return ProductCardWidget(product: product, variant: variant, cart: cart);
-                          },
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
 
                 // Floating Cart Bar
                 if (cart.totalCount > 0)
                   Positioned(
-                    left: 14,
-                    right: 14,
+                    left: 16,
+                    right: 16,
                     bottom: 16,
                     child: InkWell(
                       onTap: () => context.push('/ecommerce/cart'),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1B5E20),
-                          borderRadius: BorderRadius.circular(16),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF1E5E42), Color(0xFF13422E)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.25),
-                              blurRadius: 10,
+                              color: const Color(0xFF1E5E42).withValues(alpha: 0.35),
+                              blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -365,7 +437,7 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                               ),
                               child: Text(
                                 '${cart.totalCount}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 13),
+                                style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E5E42), fontSize: 13),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -375,11 +447,11 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                               children: [
                                 Text(
                                   '₹${cart.grandTotal.toStringAsFixed(0)}',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
                                 ),
                                 Text(
-                                  cart.freeDeliveryProgress >= 1.0 ? 'FREE Express Shipping Applied' : 'Add ₹${cart.amountNeededForFreeDelivery.toStringAsFixed(0)} for FREE delivery',
-                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 11),
+                                  cart.freeDeliveryProgress >= 1.0 ? 'FREE Express Shipping Applied 🚀' : 'Add ₹${cart.amountNeededForFreeDelivery.toStringAsFixed(0)} for FREE delivery',
+                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -389,7 +461,7 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
                           ],
                         ),
                       ),
