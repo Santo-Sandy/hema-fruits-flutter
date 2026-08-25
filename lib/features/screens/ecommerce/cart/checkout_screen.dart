@@ -1,5 +1,7 @@
 import 'package:hema_fruits/core/providers/ecommerce_provider.dart';
+import 'package:hema_fruits/core/providers/location_provider.dart';
 import 'package:hema_fruits/core/repositories/ecommerce_repository.dart';
+import 'package:hema_fruits/shared/widgets/location_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +23,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<EcommCartProvider>();
+    final location = context.watch<LocationProvider>();
+    final loc = location.currentLocation;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -49,12 +53,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Address Card
+                  // ── ADDRESS CARD (Live from LocationProvider) ─────────────────
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,23 +71,75 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             const Text('Delivering To:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             const Spacer(),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () => showLocationPickerSheet(context),
                               child: const Text('CHANGE', style: TextStyle(color: Color(0xFF0F9D58), fontWeight: FontWeight.bold, fontSize: 12)),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        const Text('Santo Kumar • 98765 43210', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          loc.displayName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        if (loc.addressLine.isNotEmpty && loc.addressLine != loc.displayName) ...[
+                          const SizedBox(height: 2),
+                          Text(loc.addressLine, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                        ],
+                        if (loc.landmark.isNotEmpty) ...[
+                          const SizedBox(height: 1),
+                          Text('Landmark: ${loc.landmark}', style: const TextStyle(color: Colors.black45, fontSize: 11)),
+                        ],
                         const SizedBox(height: 2),
-                        const Text('Flat 402, Green Avenue, 12th Main Road, HSR Layout Sector 1, Bengaluru, Karnataka - 560102', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                        Text(
+                          '${loc.city}, ${loc.state} - ${loc.pincode}',
+                          style: const TextStyle(color: Colors.black54, fontSize: 12),
+                        ),
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text('⚡ Serviceable for 2-Hour Express Delivery', style: TextStyle(fontSize: 11, color: Color(0xFF1B5E20), fontWeight: FontWeight.bold)),
+                        // Mode badge
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                loc.isServiceable ? '⚡ Serviceable for 2-Hour Express Delivery' : '📦 Standard Delivery Slot',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F3F3),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    loc.mode == LocationDetectionMode.autoDetect
+                                        ? Icons.gps_fixed
+                                        : loc.mode == LocationDetectionMode.mapPicker
+                                            ? Icons.map_rounded
+                                            : Icons.search_rounded,
+                                    size: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    loc.mode == LocationDetectionMode.autoDetect
+                                        ? 'GPS Detected'
+                                        : loc.mode == LocationDetectionMode.mapPicker
+                                            ? 'Map Pin'
+                                            : 'Typed',
+                                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -90,12 +147,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   const SizedBox(height: 14),
 
-                  // Delivery Slot Selector Card
+                  // ── DELIVERY SLOT SELECTOR ────────────────────────────────────
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,12 +190,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   const SizedBox(height: 14),
 
-                  // Payment Options
+                  // ── PAYMENT OPTIONS ───────────────────────────────────────────
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,12 +233,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   const SizedBox(height: 14),
 
-                  // Order Items Summary List
+                  // ── ORDER ITEMS SUMMARY ───────────────────────────────────────
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,11 +257,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('${item.quantity}x ${item.productTitle}', style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                              Expanded(child: Text('${item.quantity}x ${item.productTitle}', style: const TextStyle(fontSize: 12, color: Colors.black87))),
                               Text('₹${item.totalPrice.toInt()}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                             ],
                           ),
                         )),
+                        const Divider(height: 16),
+                        _priceSummaryRow('Item Total', '₹${cart.itemTotal.toInt()}'),
+                        if (cart.discountTotal > 0)
+                          _priceSummaryRow('Discount', '-₹${cart.discountTotal.toInt()}', color: Colors.green),
+                        _priceSummaryRow('Delivery Fee', cart.deliveryFee == 0 ? 'FREE ⚡' : '₹${cart.deliveryFee.toInt()}', color: cart.deliveryFee == 0 ? Colors.green : null),
+                        _priceSummaryRow('Packaging Fee', '₹${cart.packagingFee.toInt()}'),
+                        if (cart.appliedCoupon.isNotEmpty)
+                          _priceSummaryRow('Coupon (${cart.appliedCoupon})', '-₹${cart.couponDiscount.toInt()}', color: Colors.green),
+                        const Divider(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('TOTAL PAYABLE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text('₹${cart.grandTotal.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B5E20))),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -239,17 +315,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ? null
                   : () async {
                       setState(() => _isSubmitting = true);
+                      final router = GoRouter.of(context);
                       final order = await _repository.placeOrder(
                         paymentMethod: _selectedPaymentMethod,
                         slotId: _selectedSlot,
-                        addressLine: 'Flat 402, HSR Layout, Bengaluru',
+                        addressLine: loc.addressLine.isNotEmpty ? loc.addressLine : loc.displayName,
+                        city: loc.city,
+                        state: loc.state,
+                        pincode: loc.pincode,
                       );
                       setState(() => _isSubmitting = false);
 
                       if (order != null) {
                         cart.clearCart();
                         if (mounted) {
-                          context.go('/ecommerce/order-tracking/${order.id}');
+                          router.go('/ecommerce/order-tracking/${order.id}');
                         }
                       }
                     },
@@ -257,6 +337,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _priceSummaryRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color ?? Colors.black87)),
+        ],
       ),
     );
   }

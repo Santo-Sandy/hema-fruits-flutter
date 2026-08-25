@@ -26,6 +26,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 import 'package:hema_fruits/core/providers/ecommerce_provider.dart';
+import 'package:hema_fruits/core/providers/location_provider.dart';
 
 // Global context variables
 BuildContext? globalContext;
@@ -115,6 +116,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => CountryProvider()),
         ChangeNotifierProvider(create: (_) => EcommCatalogProvider()),
         ChangeNotifierProvider(create: (_) => EcommCartProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProxyProvider<ProfileProvider, SwapUserProvider>(
           create: (_) => SwapUserProvider(),
           update: (_, userProfileProvider, swapProvider) {

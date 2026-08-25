@@ -413,46 +413,50 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                       const SizedBox(height: 20),
 
-                      // Divider for SSO options
+                      // Divider for quick login options
                       Row(
                         children: [
                           Expanded(child: Divider(color: Colors.grey[300])),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Text(
-                              'OR CONTINUE WITH',
+                              'QUICK DEMO LOGIN',
                               style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold),
                             ),
                           ),
                           Expanded(child: Divider(color: Colors.grey[300])),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
-                      // SSO Social Buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      // 3-Role Quick Login Buttons
+                      Column(
                         children: [
-                          _buildSocialButton(
-                            label: 'Google',
-                            icon: Icons.g_mobiledata_rounded,
-                            color: Colors.redAccent,
-                            onTap: () {
-                              _loginEmailController.text = 'demo.buyer@hemafruits.com';
-                              _loginPasswordController.text = 'password123';
-                              _handleLogin();
-                            },
+                          _buildQuickLoginButton(
+                            label: 'Admin Login',
+                            email: 'admin@fruits.com',
+                            role: 'admin',
+                            icon: Icons.admin_panel_settings_rounded,
+                            color: const Color(0xFF6C3483),
+                            subtitle: 'admin@fruits.com • password1234',
                           ),
-                          const SizedBox(width: 12),
-                          _buildSocialButton(
-                            label: 'Demo Login',
-                            icon: Icons.flash_on_rounded,
+                          const SizedBox(height: 8),
+                          _buildQuickLoginButton(
+                            label: 'Seller Login',
+                            email: 'seller@fruits.com',
+                            role: 'processor',
+                            icon: Icons.storefront_rounded,
+                            color: const Color(0xFF1565C0),
+                            subtitle: 'seller@fruits.com • password1234',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildQuickLoginButton(
+                            label: 'Buyer Login',
+                            email: 'buyer@fruits.com',
+                            role: 'buyer',
+                            icon: Icons.shopping_cart_rounded,
                             color: const Color(0xFF0F9D58),
-                            onTap: () {
-                              _loginEmailController.text = 'demo_user@hemafruits.com';
-                              _loginPasswordController.text = 'hema12345';
-                              _handleLogin();
-                            },
+                            subtitle: 'buyer@fruits.com • password1234',
                           ),
                         ],
                       ),
@@ -652,34 +656,58 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildSocialButton({
+  Widget _buildQuickLoginButton({
     required String label,
+    required String email,
+    required String role,
     required IconData icon,
     required Color color,
-    required VoidCallback onTap,
+    required String subtitle,
   }) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        setState(() => _selectedRole = role);
+        _loginEmailController.text = email;
+        _loginPasswordController.text = 'password1234';
+        _authTab = 0;
+        _handleLogin();
+      },
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(12),
+          color: color.withValues(alpha: 0.07),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  ),
+                ],
               ),
             ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color),
           ],
         ),
       ),

@@ -16,6 +16,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   final EcommerceRepository _repository = EcommerceRepository();
   StoreOrderModel? _order;
   bool _isLoading = true;
+  bool _notFound = false;
 
   @override
   void initState() {
@@ -24,15 +25,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<void> _loadOrder() async {
-    final res = await _repository.placeOrder(
-      paymentMethod: 'UPI',
-      slotId: 'EXPRESS',
-      addressLine: 'HSR Layout',
-    );
-    setState(() {
-      _order = res;
-      _isLoading = false;
-    });
+    try {
+      final res = await _repository.getOrderById(widget.orderId);
+      setState(() {
+        _order = res;
+        _isLoading = false;
+        _notFound = res == null;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _notFound = true;
+      });
+    }
   }
 
   @override
@@ -50,6 +55,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF0F9D58)))
+          : _notFound
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                      const SizedBox(height: 12),
+                      const Text('Order not found', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      const Text('The order may have been removed or the ID is invalid.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      ElevatedButton(onPressed: () => context.go('/ecommerce/home'), child: const Text('Go Home')),
+                    ],
+                  ),
+                )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -120,26 +140,26 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         _buildTimelineStep(
                           title: 'Order Confirmed',
                           subtitle: 'Your fresh produce list is registered',
-                          isDone: true,
-                          isCurrent: false,
+                          isDone: _isStepDone('PLACED'),
+                          isCurrent: _order?.orderStatus == 'PLACED',
                         ),
                         _buildTimelineStep(
                           title: 'Freshness Checked & Packed 🥦',
                           subtitle: 'Handpicked from cold-chain center',
-                          isDone: true,
-                          isCurrent: false,
+                          isDone: _isStepDone('PACKED'),
+                          isCurrent: _order?.orderStatus == 'PACKED',
                         ),
                         _buildTimelineStep(
                           title: 'Out for Express Delivery 🚚',
-                          subtitle: 'Agent Ramesh is on the way (Est. 25 mins)',
-                          isDone: false,
-                          isCurrent: true,
+                          subtitle: 'Your order is on the way',
+                          isDone: _isStepDone('OUT_FOR_DELIVERY'),
+                          isCurrent: _order?.orderStatus == 'OUT_FOR_DELIVERY',
                         ),
                         _buildTimelineStep(
                           title: 'Delivered to Doorstep 📦',
-                          subtitle: 'Verification via OTP',
-                          isDone: false,
-                          isCurrent: false,
+                          subtitle: 'Verified via OTP',
+                          isDone: _isStepDone('DELIVERED'),
+                          isCurrent: _order?.orderStatus == 'DELIVERED',
                           isLast: true,
                         ),
                       ],
@@ -226,6 +246,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               ),
             ),
     );
+  }
+
+  /// Returns true if the order has progressed past the given status step.
+  bool _isStepDone(String step) {
+    const order = ['PLACED', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+    final currentIdx = order.indexOf(_order?.orderStatus ?? '');
+    final stepIdx = order.indexOf(step);
+    if (currentIdx < 0 || stepIdx < 0) return false;
+    return currentIdx > stepIdx;
   }
 
   Widget _buildTimelineStep({

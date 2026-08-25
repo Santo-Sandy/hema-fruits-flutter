@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:hema_fruits/core/models/ecommerce_models.dart';
 import 'package:hema_fruits/core/providers/ecommerce_provider.dart';
+import 'package:hema_fruits/core/providers/location_provider.dart';
+import 'package:hema_fruits/shared/widgets/location_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +35,7 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
   Widget build(BuildContext context) {
     final catalog = context.watch<EcommCatalogProvider>();
     final cart = context.watch<EcommCartProvider>();
+    final location = context.watch<LocationProvider>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F5),
@@ -53,34 +56,46 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(10),
+                      GestureDetector(
+                        onTap: () => showLocationPickerSheet(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.location_on_rounded, color: Colors.amberAccent, size: 20),
                         ),
-                        child: const Icon(Icons.location_on_rounded, color: Colors.amberAccent, size: 20),
                       ),
                       const SizedBox(width: 10),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => showLocationPickerSheet(context),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Deliver to HSR Layout, 560102',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      'Deliver to ${location.shortDisplay}',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 18),
+                                ],
                               ),
-                              Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 18),
+                              Text(
+                                location.currentLocation.isServiceable
+                                    ? 'Express 2-Hour Delivery Available ⚡'
+                                    : '${location.currentLocation.pincode} • Tap to change',
+                                style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.w600),
+                              ),
                             ],
                           ),
-                          Text(
-                            'Express 2-Hour Delivery Available ⚡',
-                            style: TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                        ),
                       ),
-                      const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
                         onPressed: () => context.push('/notifications'),

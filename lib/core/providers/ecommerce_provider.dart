@@ -10,6 +10,8 @@ class EcommCatalogProvider extends ChangeNotifier {
   List<StoreBanner> _banners = [];
 
   bool _isLoading = false;
+  bool _hasError = false;
+  String _errorMessage = '';
   String _selectedCategoryId = '';
   String _searchQuery = '';
   bool _isOrganicOnly = false;
@@ -18,19 +20,30 @@ class EcommCatalogProvider extends ChangeNotifier {
   List<StoreProduct> get products => _products;
   List<StoreBanner> get banners => _banners;
   bool get isLoading => _isLoading;
+  bool get hasError => _hasError;
+  String get errorMessage => _errorMessage;
   String get selectedCategoryId => _selectedCategoryId;
   String get searchQuery => _searchQuery;
   bool get isOrganicOnly => _isOrganicOnly;
 
   Future<void> initCatalog() async {
     _isLoading = true;
+    _hasError = false;
+    _errorMessage = '';
     notifyListeners();
 
     try {
-      _categories = await _repository.getCategories();
-      _banners = await _repository.getBanners();
-      _products = await _repository.getProducts();
+      final results = await Future.wait([
+        _repository.getCategories(),
+        _repository.getBanners(),
+        _repository.getProducts(),
+      ]);
+      _categories = results[0] as List<StoreCategory>;
+      _banners = results[1] as List<StoreBanner>;
+      _products = results[2] as List<StoreProduct>;
     } catch (e) {
+      _hasError = true;
+      _errorMessage = _parseError(e);
       debugPrint('Catalog init error: $e');
     }
 
@@ -39,11 +52,7 @@ class EcommCatalogProvider extends ChangeNotifier {
   }
 
   void selectCategory(String categoryId) {
-    if (_selectedCategoryId == categoryId) {
-      _selectedCategoryId = '';
-    } else {
-      _selectedCategoryId = categoryId;
-    }
+    _selectedCategoryId = (_selectedCategoryId == categoryId) ? '' : categoryId;
     fetchFilteredProducts();
   }
 
@@ -59,48 +68,87 @@ class EcommCatalogProvider extends ChangeNotifier {
 
   Future<void> fetchFilteredProducts() async {
     _isLoading = true;
+    _hasError = false;
     notifyListeners();
 
-    _products = await _repository.getProducts(
-      categoryId: _selectedCategoryId,
-      search: _searchQuery,
-      organic: _isOrganicOnly,
-    );
+    try {
+      _products = await _repository.getProducts(
+        categoryId: _selectedCategoryId,
+        search: _searchQuery,
+        organic: _isOrganicOnly,
+      );
+    } catch (e) {
+      _hasError = true;
+      _errorMessage = _parseError(e);
+      _products = [];
+    }
 
     _isLoading = false;
     notifyListeners();
   }
 
+  Future<void> retry() => initCatalog();
+
   // ── CRUD HELPERS ─────────────────────────────────────────────────────────
 
   Future<bool> addCategory(Map<String, dynamic> categoryData) async {
-    final success = await _repository.createCategory(categoryData);
-    if (success) await initCatalog();
-    return success;
+    try {
+      final success = await _repository.createCategory(categoryData);
+      if (success) await initCatalog();
+      return success;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> deleteCategory(String id) async {
-    final success = await _repository.deleteCategory(id);
-    if (success) await initCatalog();
-    return success;
+    try {
+      final success = await _repository.deleteCategory(id);
+      if (success) await initCatalog();
+      return success;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> addProduct(Map<String, dynamic> productData) async {
-    final success = await _repository.createProduct(productData);
-    if (success) await fetchFilteredProducts();
-    return success;
+    try {
+      final success = await _repository.createProduct(productData);
+      if (success) await fetchFilteredProducts();
+      return success;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> updateProduct(String id, Map<String, dynamic> productData) async {
-    final success = await _repository.updateProduct(id, productData);
-    if (success) await fetchFilteredProducts();
-    return success;
+    try {
+      final success = await _repository.updateProduct(id, productData);
+      if (success) await fetchFilteredProducts();
+      return success;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> deleteProduct(String id) async {
-    final success = await _repository.deleteProduct(id);
-    if (success) await fetchFilteredProducts();
-    return success;
+    try {
+      final success = await _repository.deleteProduct(id);
+      if (success) await fetchFilteredProducts();
+      return success;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  String _parseError(Object e) {
+    final s = e.toString();
+    if (s.contains('503')) return 'Server unavailable. Please try again.';
+    if (s.contains('401')) return 'Session expired. Please log in again.';
+    if (s.contains('SocketException') || s.contains('connection')) {
+      return 'No internet connection.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 }
 
@@ -170,7 +218,7 @@ class EcommCartProvider extends ChangeNotifier {
       _items[index].quantity += delta;
       if (_items[index].quantity <= 0) {
         final removed = _items.removeAt(index);
-        _repository.removeCartItem(removed.variantId);
+        _repository.removeCartItem(removed.variantId).catchError((_) => false);
       }
       notifyListeners();
       _syncCartWithBackend();
@@ -179,11 +227,29 @@ class EcommCartProvider extends ChangeNotifier {
 
   void removeItem(String variantId) {
     _items.removeWhere((element) => element.variantId == variantId);
-    _repository.removeCartItem(variantId);
+    _repository.removeCartItem(variantId).catchError((_) => false);
     notifyListeners();
   }
 
-  void applyCoupon(String couponCode) {
+  Future<void> applyCoupon(String couponCode) async {
+    // Try backend first
+    try {
+      final success = await _repository.applyCoupon(couponCode);
+      if (success) {
+        _appliedCoupon = couponCode;
+        if (couponCode == 'FRESH100') {
+          _couponDiscount = 100.0;
+        } else if (couponCode == 'FRESH50') {
+          _couponDiscount = 50.0;
+        } else {
+          _appliedCoupon = '';
+          _couponDiscount = 0.0;
+        }
+        notifyListeners();
+        return;
+      }
+    } catch (_) {}
+    // Local fallback
     if (couponCode == 'FRESH100') {
       _appliedCoupon = 'FRESH100';
       _couponDiscount = 100.0;
@@ -201,13 +267,13 @@ class EcommCartProvider extends ChangeNotifier {
     _items.clear();
     _appliedCoupon = '';
     _couponDiscount = 0.0;
-    _repository.clearCart();
+    _repository.clearCart().catchError((_) => false);
     notifyListeners();
   }
 
   Future<void> _syncCartWithBackend() async {
     for (final item in _items) {
-      await _repository.updateCartItem(item);
+      await _repository.updateCartItem(item).catchError((_) => null);
     }
   }
 }
