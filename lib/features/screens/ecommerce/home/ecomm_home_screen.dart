@@ -1,8 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:hema_fruits/core/models/ecommerce_models.dart';
 import 'package:hema_fruits/core/providers/ecommerce_provider.dart';
-import 'package:hema_fruits/core/providers/location_provider.dart';
-import 'package:hema_fruits/shared/widgets/location_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -22,83 +20,102 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<EcommCatalogProvider>().initCatalog();
+      context.read<EcommCartProvider>().fetchCart();
     });
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Widget _buildValueProp(IconData icon, String title, String subtitle) {
+    return Container(
+      width: 110,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: const Color(0xFF0F9D58), size: 24),
+          const SizedBox(height: 6),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.black87),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 8, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final catalog = context.watch<EcommCatalogProvider>();
     final cart = context.watch<EcommCartProvider>();
-    final location = context.watch<LocationProvider>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F5),
+      backgroundColor: const Color(0xFFAFAFAF).withValues(alpha: 0.1),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(130),
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1E5E42), Color(0xFF13422E)],
+              colors: [Color(0xFF0F9D58), Color(0xFF1B5E20)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => showLocationPickerSheet(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.location_on_rounded, color: Colors.amberAccent, size: 20),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        child: const Icon(Icons.location_on, color: Colors.amberAccent, size: 20),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => showLocationPickerSheet(context),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(width: 8),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      'Deliver to ${location.shortDisplay}',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 18),
-                                ],
-                              ),
                               Text(
-                                location.currentLocation.isServiceable
-                                    ? 'Express 2-Hour Delivery Available ⚡'
-                                    : '${location.currentLocation.pincode} • Tap to change',
-                                style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.w600),
+                                'Deliver to HSR Layout, 560102',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                               ),
+                              Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
                             ],
                           ),
-                        ),
+                          Text(
+                            'Express 2-Hour Delivery Available ⚡',
+                            style: TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
+                      const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-                        onPressed: () => context.push('/notifications'),
+                        onPressed: () => context.push('/notifications_history'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.favorite_border, color: Colors.white),
+                        onPressed: () => context.push('/ecommerce/wishlist'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.receipt_long, color: Colors.white),
+                        onPressed: () => context.push('/ecommerce/orders'),
                       ),
                     ],
                   ),
@@ -110,30 +127,30 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (val) => catalog.setSearchQuery(val),
-                      decoration: InputDecoration(
-                        hintText: 'Search fresh apples, spinach, cashews...',
-                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF1E5E42)),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  catalog.setSearchQuery('');
-                                },
-                              )
-                            : const Icon(Icons.mic_none_rounded, color: Colors.grey),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    child: InkWell(
+                      onTap: () => context.push('/ecommerce/search'),
+                      borderRadius: BorderRadius.circular(22),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.search, color: Color(0xFF0F9D58)),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Search fresh apples, spinach, cashews...',
+                                style: TextStyle(fontSize: 13, color: Colors.grey),
+                              ),
+                            ),
+                            Icon(Icons.mic, color: Colors.grey),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -144,33 +161,34 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
         ),
       ),
       body: catalog.isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E5E42)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0F9D58)))
           : Stack(
               children: [
                 RefreshIndicator(
-                  color: const Color(0xFF1E5E42),
+                  color: const Color(0xFF0F9D58),
                   onRefresh: () async {
                     await catalog.initCatalog();
                   },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 95),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Banner Slider
-                        if (catalog.banners.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 145,
-                            child: PageView.builder(
-                              itemCount: catalog.banners.length,
-                              itemBuilder: (context, index) {
-                                final banner = catalog.banners[index];
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 4.0),
+                    padding: const EdgeInsets.only(bottom: 90),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Banner Slider
+                      if (catalog.banners.isNotEmpty)
+                        SizedBox(
+                          height: 140,
+                          child: PageView.builder(
+                            itemCount: catalog.banners.length,
+                            itemBuilder: (context, index) {
+                              final banner = catalog.banners[index];
+                              return GestureDetector(
+                                onTap: () => context.push('/ecommerce/category/${banner.targetCategory}'),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10.0),
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                     child: Stack(
                                       fit: StackFit.expand,
                                       children: [
@@ -178,12 +196,12 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                                           imageUrl: banner.imageUrl,
                                           fit: BoxFit.cover,
                                           placeholder: (context, url) => Container(color: Colors.grey[200]),
-                                          errorWidget: (context, url, err) => Container(color: const Color(0xFFE8F5E9)),
+                                          errorWidget: (context, url, err) => Container(color: Colors.green[100]),
                                         ),
                                         Container(
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
-                                              colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                                              colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
                                               begin: Alignment.centerLeft,
                                               end: Alignment.centerRight,
                                             ),
@@ -204,20 +222,14 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                                                 banner.subtitle,
                                                 style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w600),
                                               ),
-                                              const SizedBox(height: 12),
+                                              const SizedBox(height: 10),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFF1E5E42),
+                                                  color: const Color(0xFF0F9D58),
                                                   borderRadius: BorderRadius.circular(14),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black.withValues(alpha: 0.2),
-                                                      blurRadius: 4,
-                                                    ),
-                                                  ],
                                                 ),
-                                                child: const Text('SHOP NOW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                                                child: const Text('SHOP NOW', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                               ),
                                             ],
                                           ),
@@ -225,219 +237,189 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                                       ],
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-
-                        // Category Pills Header
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Explore Fresh Categories',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
-                              ),
-                              InkWell(
-                                onTap: () => catalog.toggleOrganicFilter(),
-                                borderRadius: BorderRadius.circular(16),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: catalog.isOrganicOnly ? const Color(0xFF1B5E20) : Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFF1E5E42), width: 1.2),
-                                    boxShadow: [
-                                      if (catalog.isOrganicOnly)
-                                        BoxShadow(
-                                          color: const Color(0xFF1B5E20).withValues(alpha: 0.3),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.eco, size: 14, color: catalog.isOrganicOnly ? Colors.amberAccent : const Color(0xFF1E5E42)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Organic Only',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: catalog.isOrganicOnly ? Colors.white : const Color(0xFF1E5E42),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Category Bar
-                        SizedBox(
-                          height: 95,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            itemCount: catalog.categories.length,
-                            itemBuilder: (context, index) {
-                              final cat = catalog.categories[index];
-                              final isSelected = catalog.selectedCategoryId == cat.id;
-
-                              return GestureDetector(
-                                onTap: () => catalog.selectCategory(cat.id),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  width: 85,
-                                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: isSelected ? const Color(0xFF1E5E42) : Colors.grey.withValues(alpha: 0.15),
-                                      width: isSelected ? 2 : 1,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: isSelected
-                                            ? const Color(0xFF1E5E42).withValues(alpha: 0.15)
-                                            : Colors.black.withValues(alpha: 0.03),
-                                        blurRadius: isSelected ? 8 : 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: CachedNetworkImage(
-                                          imageUrl: cat.iconUrl,
-                                          height: 40,
-                                          width: 40,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) => const Icon(Icons.shopping_basket, color: Color(0xFF1E5E42)),
-                                          errorWidget: (context, url, err) => const Icon(Icons.nature, color: Color(0xFF1E5E42)),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        cat.name,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                          color: isSelected ? const Color(0xFF1E5E42) : Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ),
                               );
                             },
                           ),
                         ),
 
-                        const SizedBox(height: 12),
-
-                        // Freshness Banner Tag
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+                      // Category Pills Header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Explore Fresh Categories',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.amber.shade400, width: 1),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.bolt, color: Colors.amber, size: 20),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Hema Guaranteed Freshness • Direct Farm Delivery',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
+                            InkWell(
+                              onTap: () => catalog.toggleOrganicFilter(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: catalog.isOrganicOnly ? const Color(0xFF1B5E20) : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFF0F9D58)),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Product Grid or Empty State
-                        catalog.products.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.all(32.0),
-                                child: Center(
-                                  child: Column(
-                                    children: [
-                                      Icon(Icons.search_off_rounded, size: 48, color: Colors.grey[400]),
-                                      const SizedBox(height: 12),
-                                      const Text(
-                                        'No matching fresh items found',
-                                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.eco, size: 14, color: catalog.isOrganicOnly ? Colors.white : const Color(0xFF0F9D58)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Organic Only',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: catalog.isOrganicOnly ? Colors.white : const Color(0xFF0F9D58),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                                child: GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: catalog.products.length,
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    childAspectRatio: 0.68,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                  ),
-                                  itemBuilder: (context, index) {
-                                    final product = catalog.products[index];
-                                    final variant = product.defaultVariant;
-
-                                    return ProductCardWidget(product: product, variant: variant, cart: cart);
-                                  },
+                                    ),
+                                  ],
                                 ),
                               ),
-                      ],
-                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Category Bar
+                      SizedBox(
+                        height: 95,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          itemCount: catalog.categories.length,
+                          itemBuilder: (context, index) {
+                            final cat = catalog.categories[index];
+                            final isSelected = catalog.selectedCategoryId == cat.id;
+
+                            return GestureDetector(
+                              onTap: () => context.push('/ecommerce/category/${cat.id}'),
+                              child: Container(
+                                width: 85,
+                                margin: const EdgeInsets.symmetric(horizontal: 5),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected ? const Color(0xFF0F9D58) : Colors.grey.withValues(alpha: 0.2),
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: CachedNetworkImage(
+                                        imageUrl: cat.iconUrl,
+                                        height: 42,
+                                        width: 42,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => const Icon(Icons.shopping_basket, color: Colors.green),
+                                        errorWidget: (context, url, err) => const Icon(Icons.nature, color: Colors.green),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      cat.name,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        color: isSelected ? const Color(0xFF1B5E20) : Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+                      // Value propositions row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildValueProp(Icons.eco, 'Pesticide Free', 'Certified farms'),
+                            _buildValueProp(Icons.bolt, '2-Hr Delivery', 'Express cold-chain'),
+                            _buildValueProp(Icons.shield, 'Refund Guarantee', '24-hr assurance'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Flash Deals Badge Header
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF8E1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.bolt, color: Colors.amber, size: 20),
+                            SizedBox(width: 6),
+                            Text(
+                              'Hema Guaranteed Freshness • Harvested Daily',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Product Grid
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: catalog.products.length,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.68,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                          itemBuilder: (context, index) {
+                            final product = catalog.products[index];
+                            final variant = product.defaultVariant;
+
+                            return ProductCardWidget(product: product, variant: variant, cart: cart);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
                 // Floating Cart Bar
                 if (cart.totalCount > 0)
                   Positioned(
-                    left: 16,
-                    right: 16,
+                    left: 14,
+                    right: 14,
                     bottom: 16,
                     child: InkWell(
                       onTap: () => context.push('/ecommerce/cart'),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1E5E42), Color(0xFF13422E)],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFF1B5E20),
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF1E5E42).withValues(alpha: 0.35),
-                              blurRadius: 12,
+                              color: Colors.black.withValues(alpha: 0.25),
+                              blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -452,7 +434,7 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                               ),
                               child: Text(
                                 '${cart.totalCount}',
-                                style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E5E42), fontSize: 13),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 13),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -462,11 +444,11 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                               children: [
                                 Text(
                                   '₹${cart.grandTotal.toStringAsFixed(0)}',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 Text(
-                                  cart.freeDeliveryProgress >= 1.0 ? 'FREE Express Shipping Applied 🚀' : 'Add ₹${cart.amountNeededForFreeDelivery.toStringAsFixed(0)} for FREE delivery',
-                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.w600),
+                                  cart.freeDeliveryProgress >= 1.0 ? 'FREE Express Shipping Applied' : 'Add ₹${cart.amountNeededForFreeDelivery.toStringAsFixed(0)} for FREE delivery',
+                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 11),
                                 ),
                               ],
                             ),
@@ -476,7 +458,7 @@ class _EcommHomeScreenState extends State<EcommHomeScreen> {
                               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
                           ],
                         ),
                       ),

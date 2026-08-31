@@ -284,15 +284,27 @@ Future<dynamic> getUser(String userid) async {
     //     )
     //     .timeout(const Duration(seconds: 30));
 
-    if (response['status'] == 200) {
-      if (response != null && response["data"] != null) {
-        final userData = response["data"][0];
+    if (response != null) {
+      Map<String, dynamic>? userData;
+      if (response is Map) {
+        if (response['status'] == 200 && response['data'] != null) {
+          final dataVal = response['data'];
+          if (dataVal is List && dataVal.isNotEmpty) {
+            userData = Map<String, dynamic>.from(dataVal[0] as Map);
+          } else if (dataVal is Map) {
+            userData = Map<String, dynamic>.from(dataVal);
+          }
+        } else if (response['_id'] != null) {
+          userData = Map<String, dynamic>.from(response);
+        }
+      }
+
+      if (userData != null) {
         await SecureStorageService.saveUserData(userData);
         return userData;
       }
-    } else {
-      throw Exception("Failed to fetch user: ${response.statusCode}");
     }
+    throw Exception("Failed to fetch user: invalid response format or user not found");
   } catch (e) {
     rethrow;
   }
@@ -340,11 +352,21 @@ Future<bool> updateProfile({
 
     // final responseData = jsonDecode(response.data);
 
-    if (response["status"] == 200) {
+    bool isSuccess = false;
+    if (response is Map) {
+      if (response['status'] == 200) {
+        isSuccess = true;
+      } else if (response['_id'] != null) {
+        isSuccess = true;
+      }
+    }
+
+    if (isSuccess) {
       await getUser(userId);
       return true;
     } else {
-      throw Exception(response["error_msg"] ?? "Update failed");
+      final errMsg = (response is Map) ? (response["error_msg"] ?? response["message"] ?? response["error"]) : null;
+      throw Exception(errMsg ?? "Update failed");
     }
   } on DioException catch (e) {
     if (e.type == DioExceptionType.connectionError ||

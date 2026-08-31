@@ -29,7 +29,7 @@ class AppConfig {
   static String _imageurl = "https://cerp.sgp1.digitaloceanspaces.com/";
   Dio get dio => _dio;
 
-  static const _baseUrl = 'http://10.0.0.132:7002/';
+  static const _baseUrl = 'http://10.97.30.182:7002/';
   // static const _baseUrl = 'http://192.168.1.9:7002/';
   // static const _baseUrl = 'http://10.0.0.151:7004/';
 

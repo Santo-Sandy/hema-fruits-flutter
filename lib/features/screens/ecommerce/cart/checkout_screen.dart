@@ -15,10 +15,17 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final EcommerceRepository _repository = EcommerceRepository();
+  final TextEditingController _notesController = TextEditingController();
 
   String _selectedSlot = 'EXPRESS';
   String _selectedPaymentMethod = 'UPI';
   bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,27 +78,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             const Text('Delivering To:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             const Spacer(),
                             TextButton(
-                              onPressed: () => showLocationPickerSheet(context),
+                              onPressed: () => context.push('/ecommerce/addresses'),
                               child: const Text('CHANGE', style: TextStyle(color: Color(0xFF0F9D58), fontWeight: FontWeight.bold, fontSize: 12)),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          loc.displayName,
+                          cart.addresses.isEmpty
+                              ? 'No Delivery Address Added'
+                              : '${cart.selectedAddress['fullName'] ?? ''} • ${cart.selectedAddress['phone'] ?? ''}',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
-                        if (loc.addressLine.isNotEmpty && loc.addressLine != loc.displayName) ...[
-                          const SizedBox(height: 2),
-                          Text(loc.addressLine, style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                        ],
-                        if (loc.landmark.isNotEmpty) ...[
-                          const SizedBox(height: 1),
-                          Text('Landmark: ${loc.landmark}', style: const TextStyle(color: Colors.black45, fontSize: 11)),
-                        ],
                         const SizedBox(height: 2),
                         Text(
-                          '${loc.city}, ${loc.state} - ${loc.pincode}',
+                          cart.addresses.isEmpty
+                              ? 'Please click CHANGE to add a delivery address.'
+                              : '${cart.selectedAddress['addressLine'] ?? ''}, ${cart.selectedAddress['city'] ?? ''}, ${cart.selectedAddress['state'] ?? ''} - ${cart.selectedAddress['pincode'] ?? ''}',
                           style: const TextStyle(color: Colors.black54, fontSize: 12),
                         ),
                         const SizedBox(height: 8),
@@ -233,7 +236,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   const SizedBox(height: 14),
 
-                  // ── ORDER ITEMS SUMMARY ───────────────────────────────────────
+                  // Special Notes Input Card
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.notes, color: Color(0xFF0F9D58), size: 20),
+                            SizedBox(width: 8),
+                            Text('Delivery Instructions / Notes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _notesController,
+                          maxLines: 2,
+                          style: const TextStyle(fontSize: 12),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Leave at the gate, call before delivery, etc.',
+                            hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+                            fillColor: const Color(0xFFF8F9FA),
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                            ),
+                            contentPadding: const EdgeInsets.all(10),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Order Items Summary List
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -315,21 +358,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ? null
                   : () async {
                       setState(() => _isSubmitting = true);
-                      final router = GoRouter.of(context);
+                      final activeAddress = cart.selectedAddress;
+                      final addressLine = activeAddress['addressLine'] ?? '';
+                      final city = activeAddress['city'] ?? '';
+                      final state = activeAddress['state'] ?? '';
+                      final pincode = activeAddress['pincode'] ?? '';
+                      final customerName = activeAddress['fullName'] ?? '';
+                      final customerPhone = activeAddress['phone'] ?? '';
+                      
+                      final notes = _notesController.text.trim();
+                      final finalAddressLine = notes.isNotEmpty ? '$addressLine. Notes: $notes' : addressLine;
+
                       final order = await _repository.placeOrder(
                         paymentMethod: _selectedPaymentMethod,
                         slotId: _selectedSlot,
-                        addressLine: loc.addressLine.isNotEmpty ? loc.addressLine : loc.displayName,
-                        city: loc.city,
-                        state: loc.state,
-                        pincode: loc.pincode,
+                        addressLine: finalAddressLine,
+                        city: city,
+                        state: state,
+                        pincode: pincode,
+                        customerName: customerName,
+                        customerPhone: customerPhone,
                       );
                       setState(() => _isSubmitting = false);
 
                       if (order != null) {
                         cart.clearCart();
                         if (mounted) {
-                          router.go('/ecommerce/order-tracking/${order.id}');
+                          context.go('/ecommerce/order-success/${order.id}');
                         }
                       }
                     },

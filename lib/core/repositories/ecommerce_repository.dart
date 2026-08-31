@@ -114,9 +114,16 @@ class EcommerceRepository {
     return null;
   }
 
-  Future<bool> removeCartItem(String variantId) async {
-    final res = await _dio.delete('/api/v1/store/cart/item/$variantId');
-    return res.data != null && res.data['success'] == true;
+  Future<CartSummaryModel?> removeCartItem(String variantId) async {
+    try {
+      final res = await _dio.delete('/api/v1/store/cart/item/$variantId');
+      if (res.data != null && res.data['cart'] != null) {
+        return CartSummaryModel.fromJson(res.data['cart']);
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return null;
   }
 
   Future<bool> clearCart() async {
@@ -124,12 +131,30 @@ class EcommerceRepository {
     return res.data != null && res.data['success'] == true;
   }
 
-  Future<bool> applyCoupon(String couponCode) async {
-    final res = await _dio.post('/api/v1/store/cart/coupon', data: {'coupon': couponCode});
-    return res.data != null && res.data['success'] == true;
+  Future<CartSummaryModel?> applyCoupon(String couponCode) async {
+    try {
+      final res = await _dio.post('/api/v1/store/cart/coupon', data: {'coupon_code': couponCode});
+      if (res.data != null && res.data['cart'] != null) {
+        return CartSummaryModel.fromJson(res.data['cart']);
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return null;
   }
 
-  // ── ORDER APIs ────────────────────────────────────────────────────────────
+  Future<List<StoreOrderModel>> getOrders() async {
+    try {
+      final res = await _dio.get('/api/v1/store/orders');
+      if (res.data != null && res.data['orders'] != null) {
+        final List list = res.data['orders'];
+        return list.map((e) => StoreOrderModel.fromJson(e)).toList();
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return [];
+  }
 
   Future<StoreOrderModel?> placeOrder({
     required String paymentMethod,

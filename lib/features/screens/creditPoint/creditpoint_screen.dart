@@ -588,9 +588,21 @@ class _CreditpointScreenState extends State<CreditpointScreen> {
       final response = await service.getdata(
         endpoint: "/entities/response/${row["ref_id"]}",
       );
-      if (response['status'] == 200) {
-        final responseData = response['data'];
-        final post = responseData[0];
+      Map<String, dynamic>? post;
+      if (response is Map) {
+        if (response['status'] == 200 && response['data'] != null) {
+          final dataVal = response['data'];
+          if (dataVal is List && dataVal.isNotEmpty) {
+            post = Map<String, dynamic>.from(dataVal[0] as Map);
+          } else if (dataVal is Map) {
+            post = Map<String, dynamic>.from(dataVal);
+          }
+        } else if (response['_id'] != null) {
+          post = Map<String, dynamic>.from(response);
+        }
+      }
+
+      if (post != null) {
         final postid = post['stockId'] ?? post["requirementId"] ?? "";
         setState(() {
           isload = false;
