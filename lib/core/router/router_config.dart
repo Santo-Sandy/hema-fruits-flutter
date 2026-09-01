@@ -20,6 +20,12 @@ import 'package:hema_fruits/features/screens/creditPoint/credit_payment_screen.d
 import 'package:hema_fruits/features/screens/creditPoint/creditpoint_screen.dart';
 import 'package:hema_fruits/features/screens/user_profile/user_profile.dart';
 
+// Admin & Seller Management Screens
+import 'package:hema_fruits/features/screens/admin/admin_control_screen.dart';
+import 'package:hema_fruits/features/screens/seller/add_stock_screen.dart';
+import 'package:hema_fruits/features/screens/seller/seller_stock_list_screen.dart';
+import 'package:hema_fruits/features/screens/seller/seller_sales_dashboard_screen.dart';
+
 // Activity & Enquiry
 import 'package:hema_fruits/features/screens/activity/my_activity_screen.dart';
 import 'package:hema_fruits/features/screens/activity/post_requiremment/my_post_screen.dart';
@@ -69,6 +75,22 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra as bool? ?? false;
         return LoginScreen(isPwdLogin: extra);
       },
+    ),
+    GoRoute(
+      path: '/login/admin',
+      builder: (_, _) => const AdminLoginScreen(),
+    ),
+    GoRoute(
+      path: '/login/seller',
+      builder: (_, _) => const SellerLoginScreen(),
+    ),
+    GoRoute(
+      path: '/login/customer',
+      builder: (_, _) => const CustomerLoginScreen(),
+    ),
+    GoRoute(
+      path: '/login/user',
+      builder: (_, _) => const CustomerLoginScreen(),
     ),
     GoRoute(
       path: RoutePath.personalInfo,
@@ -207,6 +229,22 @@ final GoRouter appRouter = GoRouter(
           path: RoutePath.dashboard,
           name: RouteName.dashboard,
           builder: (_, _) => const DashboardScreen(),
+        ),
+        GoRoute(
+          path: '/admin/control',
+          builder: (_, _) => const AdminControlScreen(),
+        ),
+        GoRoute(
+          path: '/seller/stocks',
+          builder: (_, _) => const SellerStockListScreen(),
+        ),
+        GoRoute(
+          path: '/seller/add-stock',
+          builder: (_, _) => const AddStockScreen(),
+        ),
+        GoRoute(
+          path: '/seller/sales-dashboard',
+          builder: (_, _) => const SellerSalesDashboardScreen(),
         ),
         GoRoute(
           path: RoutePath.offlineQueue,

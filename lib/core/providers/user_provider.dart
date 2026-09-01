@@ -21,6 +21,11 @@ class ProfileProvider extends BaseProvider {
     return userprofile['registrationType'].toString();
   }
 
+  void setUserProfileMap(Map<String, dynamic> data) {
+    userprofile = Map<String, dynamic>.from(data);
+    notifyListeners();
+  }
+
   Future<void> rewardfetch({required String endpoint}) async {
     setLoading(true);
     UserService userService = UserService();

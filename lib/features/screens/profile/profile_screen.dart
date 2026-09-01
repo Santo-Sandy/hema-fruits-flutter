@@ -196,78 +196,23 @@ class _AccountScreen extends State<AccountScreen> {
                                                 // ── Role chip ──
                                                 Row(
                                                   children: [
+                                                    if (userData['natureOfBusiness'] != null) ...[
+                                                      AppChip(
+                                                        label: userData['natureOfBusiness'].toString(),
+                                                        color: AppColors.background,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                    ],
                                                     AppChip(
-                                                      label:
-                                                          userData['natureOfBusiness'],
-                                                      color:
-                                                          AppColors.background,
+                                                      label: (userData['role'] == "admin")
+                                                          ? "Admin"
+                                                          : (userData['role'] == "processor" || userData['role'] == "seller")
+                                                              ? "Seller"
+                                                              : "Customer",
+                                                      color: AppColors.background,
                                                     ),
-                                                    // Divider(
-                                                    //   height: 30,
-                                                    //   thickness: 10,
-                                                    //   indent: 10,
-                                                    //   color:
-                                                    //       AppColors.background,
-                                                    // ),
-                                                    // AppChip(
-                                                    //   label:
-                                                    //       userData['role'] ==
-                                                    //           "both"
-                                                    //       ? "Buyer & Merchant"
-                                                    //       : (userData['role'] ==
-                                                    //                 "processor"
-                                                    //             ? "Merchant"
-                                                    //             : "Buyer"),
-                                                    //   color:
-                                                    //       AppColors.background,
-                                                    // ),
                                                   ],
                                                 ),
-                                                // const SizedBox(height: 8),
-                                                // Row(
-                                                //   children: [
-                                                //     Icon(
-                                                //       Icons.phone,
-                                                //       size: 18,
-                                                //       color: AppColors.background,
-                                                //     ),
-                                                //     const SizedBox(width: 8),
-                                                //     Text(
-                                                //       userData['phone'].split(' ')[0],
-                                                //       style: AppTextThemes
-                                                //           .getLightTextTheme
-                                                //           .titleSmall
-                                                //           ?.copyWith(
-                                                //             color: AppColors.background,
-                                                //             fontWeight: FontWeight.w700,
-                                                //             letterSpacing: 0.2,
-                                                //           ),
-                                                //     ),
-                                                //   ],
-                                                // ),
-                                                // Row(
-                                                //   children: [
-                                                //     Icon(
-                                                //       Icons.email,
-                                                //       size: 18,
-                                                //       color: AppColors.background,
-                                                //     ),
-                                                //     const SizedBox(width: 8),
-                                                //     Text(
-                                                //       userData['email'].split(' ')[0],
-                                                //       style: AppTextThemes
-                                                //           .getLightTextTheme
-                                                //           .titleSmall
-                                                //           ?.copyWith(
-                                                //             color: AppColors.background,
-                                                //             fontWeight: FontWeight.w700,
-                                                //             letterSpacing: 0.2,
-                                                //           ),
-                                                //     ),
-                                                //   ],
-                                                // ),
-
-                                                // const SizedBox(height: 8),
                                               ],
                                             ),
                                           ),
@@ -331,16 +276,101 @@ class _AccountScreen extends State<AccountScreen> {
                 //   icon: Icons.person_rounded,
                 // ),
                 PersonalDetailsCard(user: userData),
-                // const SizedBox(height: 16),
+
+                // ── ROLE SPECIFIC ACTION CARDS ──
+                if (userData['role'] == 'admin') ...[
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4A148C).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF4A148C).withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF4A148C), size: 22),
+                            SizedBox(width: 8),
+                            Text('ADMIN PORTAL CONTROLS',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF4A148C))),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.push('/admin/control'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4A148C),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.dashboard_customize_rounded, color: Colors.white, size: 18),
+                            label: const Text('Open Admin Control Hub', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                if (userData['role'] == 'processor' || userData['role'] == 'seller') ...[
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F9D58).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF0F9D58).withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.storefront_rounded, color: Color(0xFF0F9D58), size: 22),
+                            SizedBox(width: 8),
+                            Text('SELLER STOCK & SALES MANAGEMENT',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F9D58))),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => context.push('/seller/stocks'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0F9D58),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 16),
+                                label: const Text('My Stocks', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => context.push('/seller/sales-dashboard'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1565C0),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 16),
+                                label: const Text('Sales Dash', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 if (userData['natureOfBusiness'] != 'Agent' &&
                     userData['companyName'] != null) ...[
-                  // SectionHeaderCard(
-                  //   title: "Company Details",
-                  //   borderradius: 0,
-                  //   titlecolor: AppColors.accent,
-                  //   subtitle: "View your company information",
-                  //   icon: Icons.business_rounded,
-                  // ),
                   CompanyDetailsCard(
                     company: userData,
                     ontaps: () {

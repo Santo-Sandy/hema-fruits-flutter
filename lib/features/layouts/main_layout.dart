@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:hema_fruits/core/providers/user_provider.dart';
 import 'package:hema_fruits/core/router/router_setup.dart';
 import 'package:hema_fruits/core/services/offline_queue_service.dart';
 import 'package:hema_fruits/core/utils/Responsive/app_breakpoints.dart';
@@ -8,6 +9,7 @@ import 'package:hema_fruits/shared/theme/app_colors.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'app_header.dart';
 import 'app_footer.dart';
 
@@ -20,18 +22,36 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  static const _tabPaths = [
-    RoutePath.home,
-    '/ecommerce/cart',
-    '/ecommerce/orders/my-orders',
-    RoutePath.profile,
-  ];
-
   static const _lockedPaths = [
     RoutePath.personalInfo,
     RoutePath.businessInfo,
     RoutePath.newPost,
   ];
+
+  List<String> _getTabPathsForRole(String role) {
+    if (role == 'admin') {
+      return [
+        '/admin/control',
+        RoutePath.offlineQueue,
+        RoutePath.salesBuyBidding,
+        RoutePath.profile,
+      ];
+    } else if (role == 'processor' || role == 'seller') {
+      return [
+        '/seller/stocks',
+        '/seller/add-stock',
+        '/seller/sales-dashboard',
+        RoutePath.profile,
+      ];
+    } else {
+      return [
+        RoutePath.home,
+        '/ecommerce/cart',
+        '/ecommerce/orders/my-orders',
+        RoutePath.profile,
+      ];
+    }
+  }
 
   Future<void> _showExitDialog() async {
     final confirmed = await showDialog<bool>(
@@ -60,7 +80,10 @@ class _MainLayoutState extends State<MainLayout> {
     int index, {
     int homeTabIndex = 0,
     int activityTabIndex = 0,
+    required String role,
   }) {
+    final tabPaths = _getTabPathsForRole(role);
+    if (index < 0 || index >= tabPaths.length) return;
     final location = GoRouterState.of(context).uri.toString();
     final bool isLockedScreen = _lockedPaths.any(
       (p) => location == p || location.startsWith(p),
@@ -69,17 +92,22 @@ class _MainLayoutState extends State<MainLayout> {
       _showExitDialog();
       return;
     }
-    if (index == 0) {
-      context.go('${_tabPaths[index]}?tab=$homeTabIndex');
-    } else if (index == 2) {
-      context.go('${_tabPaths[index]}?tab=$activityTabIndex');
+    final target = tabPaths[index];
+    if (index == 0 && target == RoutePath.home) {
+      context.go('$target?tab=$homeTabIndex');
+    } else if (target == RoutePath.myActivity) {
+      context.go('$target?tab=$activityTabIndex');
     } else {
-      context.go(_tabPaths[index]);
+      context.go(target);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final profile = context.watch<ProfileProvider>().userprofile;
+    final role = profile['role']?.toString() ?? 'buyer';
+    final tabPaths = _getTabPathsForRole(role);
+
     final location = GoRouterState.of(context).uri.toString();
 
     final bool isLockedScreen = _lockedPaths.any(
@@ -87,10 +115,10 @@ class _MainLayoutState extends State<MainLayout> {
     );
 
     int tabIndex = -1;
-    for (int i = _tabPaths.length - 1; i >= 0; i--) {
-      if (location == _tabPaths[i] ||
-          location.startsWith('${_tabPaths[i]}/') ||
-          location.startsWith('${_tabPaths[i]}?')) {
+    for (int i = tabPaths.length - 1; i >= 0; i--) {
+      if (location == tabPaths[i] ||
+          location.startsWith('${tabPaths[i]}/') ||
+          location.startsWith('${tabPaths[i]}?')) {
         tabIndex = i;
         break;
       }
@@ -113,7 +141,7 @@ class _MainLayoutState extends State<MainLayout> {
             if (MediaQuery.of(context).size.width > 768)
               TabletSidebar(
                 currentIndex: tabIndex,
-                onTap: (index) => _handleTabTap(index),
+                onTap: (index) => _handleTabTap(index, role: role),
               ),
             Flexible(
               fit: FlexFit.tight,
@@ -129,6 +157,7 @@ class _MainLayoutState extends State<MainLayout> {
                             index,
                             homeTabIndex: homeTabIndex ?? 0,
                             activityTabIndex: activityTabIndex ?? 0,
+                            role: role,
                           ),
                     ),
                 ],

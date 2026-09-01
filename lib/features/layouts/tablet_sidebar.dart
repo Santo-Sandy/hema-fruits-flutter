@@ -1,13 +1,8 @@
-import 'package:hema_fruits/core/providers/swap_user_provider.dart';
 import 'package:hema_fruits/core/providers/user_provider.dart';
-import 'package:hema_fruits/core/router/router_setup.dart';
-import 'package:hema_fruits/core/services/translate.dart';
 import 'package:hema_fruits/features/layouts/profile_percent.dart';
 import 'package:hema_fruits/shared/theme/app_text_theme.dart';
-import 'package:hema_fruits/shared/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:hema_fruits/shared/theme/app_colors.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class TabletSidebar extends StatefulWidget {
@@ -27,29 +22,31 @@ class TabletSidebar extends StatefulWidget {
 }
 
 class _TabletSidebarState extends State<TabletSidebar> {
-  final items = [
-    _NavItem(Icons.home_outlined, Icons.home, Translate.t("navBar.home")),
-    _NavItem(
-      Icons.dashboard_outlined,
-      Icons.dashboard,
-      Translate.t("navBar.Dashboard"),
-    ),
-    _NavItem(
-      Icons.timeline_outlined,
-      Icons.timeline,
-      Translate.t("navBar.MyActivity"),
-    ),
-    // _NavItem(
-    //   Icons.chat_bubble_outline,
-    //   Icons.chat_bubble,
-    //   Translate.t("navBar.MyEnquiry"),
-    // ),
-    _NavItem(
-      Icons.crisis_alert_rounded,
-      Icons.crisis_alert_outlined,
-      Translate.t("navBar.Bidding"),
-    ),
-  ];
+  List<_NavItem> _getItemsForRole(String role) {
+    if (role == 'admin') {
+      return const [
+        _NavItem(Icons.admin_panel_settings_outlined, Icons.admin_panel_settings, "Admin Controls"),
+        _NavItem(Icons.swap_calls_outlined, Icons.swap_calls, "Offline Queue"),
+        _NavItem(Icons.gavel_outlined, Icons.gavel, "Bidding"),
+        _NavItem(Icons.person_outline, Icons.person, "Account"),
+      ];
+    } else if (role == 'processor' || role == 'seller') {
+      return const [
+        _NavItem(Icons.inventory_2_outlined, Icons.inventory_2, "My Stocks"),
+        _NavItem(Icons.add_circle_outline, Icons.add_circle, "Add Produce Stock"),
+        _NavItem(Icons.bar_chart_outlined, Icons.bar_chart, "Sales Dashboard"),
+        _NavItem(Icons.person_outline, Icons.person, "Seller Account"),
+      ];
+    } else {
+      return const [
+        _NavItem(Icons.home_outlined, Icons.home, "Home"),
+        _NavItem(Icons.shopping_basket_outlined, Icons.shopping_basket, "My Basket"),
+        _NavItem(Icons.local_shipping_outlined, Icons.local_shipping, "My Orders"),
+        _NavItem(Icons.person_outline, Icons.person, "My Account"),
+      ];
+    }
+  }
+
   double percent = 0.0;
   void getProfilePercentage(Map<String, dynamic> userData) {
     // These are the best signals available in current app storage.
@@ -108,6 +105,9 @@ class _TabletSidebarState extends State<TabletSidebar> {
             builder: (context, provider, child) {
               final userData = provider.userprofile;
               getProfilePercentage(userData);
+              final role = userData['role']?.toString() ?? 'buyer';
+              final items = _getItemsForRole(role);
+
               return Column(
                 children: [
                   // Header
@@ -115,18 +115,6 @@ class _TabletSidebarState extends State<TabletSidebar> {
                       ? Container(
                           width: double.infinity,
                           padding: const EdgeInsets.fromLTRB(20, 36, 20, 0),
-                          // decoration: const BoxDecoration(
-                          //   gradient: LinearGradient(
-                          //     colors: [
-                          //       AppColors.primaryDark,
-                          //       AppColors.primary,
-                          //       AppColors.primaryLight,
-                          //     ],
-                          //     begin: Alignment.topLeft,
-                          //     end: Alignment.bottomRight,
-                          //     stops: [0.0, 0.5, 1.0],
-                          //   ),
-                          // ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -135,15 +123,12 @@ class _TabletSidebarState extends State<TabletSidebar> {
                                 percent: percent,
                                 userData: userData,
                               ),
-
                               const SizedBox(width: 14),
-
-                              // ── Name ──
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    userData['name'],
+                                    userData['name'] ?? 'User',
                                     style: AppTextThemes
                                         .getLightTextTheme
                                         .titleLarge!
@@ -158,146 +143,59 @@ class _TabletSidebarState extends State<TabletSidebar> {
                             ],
                           ),
                         )
-                      : SizedBox(height: 0),
+                      : const SizedBox(height: 0),
+                  const SizedBox(height: 20),
+
+                  /// 🔹 MENU ITEMS
+                  ...List.generate(items.length, (i) {
+                    final item = items[i];
+                    final selected =
+                        widget.currentIndex >= 0 && i == widget.currentIndex;
+
+              return InkWell(
+                onTap: () => widget.onTap(i),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Colors.black.withAlpha(20)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        selected ? item.activeIcon : item.icon,
+                        color: selected ? Colors.black : AppColors.textHint,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: AppTextThemes.getLightTextTheme.labelLarge!
+                              .copyWith(
+                                fontSize: MediaQuery.sizeOf(context).width * 0.02,
+                                color: selected
+                                    ? Colors.black
+                                    : AppColors.textHint,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
                 ],
               );
             },
           ),
-
-          const SizedBox(height: 20),
-
-          /// 🔹 MENU ITEMS
-          ...List.generate(items.length, (i) {
-            final item = items[i];
-            final selected =
-                widget.currentIndex >= 0 && i == widget.currentIndex;
-
-            return InkWell(
-              onTap: () => widget.onTap(i),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? Colors.black.withAlpha(20)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      selected ? item.activeIcon : item.icon,
-                      color: selected ? Colors.black : AppColors.textHint,
-                    ),
-
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        item.label,
-                        style: AppTextThemes.getLightTextTheme.labelLarge!
-                            .copyWith(
-                              fontSize: MediaQuery.sizeOf(context).width * 0.02,
-                              color: selected
-                                  ? Colors.black
-                                  : AppColors.textHint,
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-
-          // const Spacer(),
-
-          // /// 🔹 BOTTOM TOGGLE (same as top)
-          // Padding(
-          //   padding: const EdgeInsets.all(12),
-          //   child: _buildBuyerSellerToggle(),
-          // ),
         ],
       ),
-    );
-  }
-
-  /// 🔥 BUYER / SELLER TOGGLE (WORKING)
-  Widget _buildBuyerSellerToggle() {
-    return Consumer<SwapUserProvider>(
-      builder: (context, swapProvider, _) {
-        final isBuyer = swapProvider.swapedUser == 'buyer';
-
-        return Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: AppColors.primarySubtle,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.primary.withAlpha(20)),
-          ),
-          child: Row(
-            children: [
-              /// BUYER
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (!isBuyer) {
-                      // swapProvider.toggleUser();
-                      context.go(RoutePath.home);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isBuyer ? Colors.black : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Buyer",
-                        style: TextStyle(
-                          color: isBuyer ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              /// SELLER
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (isBuyer) {
-                      // swapProvider.toggleUser();
-                      context.go(RoutePath.home);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: !isBuyer ? Colors.black : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Seller",
-                        style: TextStyle(
-                          color: !isBuyer ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
