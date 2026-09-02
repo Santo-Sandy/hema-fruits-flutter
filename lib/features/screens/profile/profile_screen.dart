@@ -98,21 +98,37 @@ class _AccountScreen extends State<AccountScreen> {
 
   Future<void> getuserprofile({bool forceRefresh = false}) async {
     try {
-      // Skip if already cached and not forcing refresh
+      final profileProvider = context.read<ProfileProvider>();
+      final localUser = await SecureStorageService.getUserData();
+      final localProfile = await SecureStorageService.getUserProfileData();
+
+      Map<String, dynamic> merged = {...localUser, ...localProfile};
+      if (merged.isNotEmpty) {
+        userData = merged;
+        if (profileProvider.userprofile.isEmpty) {
+          profileProvider.setUserProfileMap(merged);
+        }
+      }
+
       if (_isProfileDataCached && !forceRefresh) {
+        await getProfilePercentage();
         return;
       }
 
-      final profileProvider = context.read<ProfileProvider>();
-      userData = await SecureStorageService.getUserData();
       final userId = userData['_id'];
-      FilterRequest request = FilterRequest(userId: userId);
-      profileProvider.userprofilefetch(
-        endpoint: "entities/filter/users",
-        filterPayload: request.getuserprofile(),
-      );
-      // await getUser(userId);
-      userData = await SecureStorageService.getUserProfileData();
+      if (userId != null && userId.toString().isNotEmpty) {
+        FilterRequest request = FilterRequest(userId: userId);
+        await profileProvider.userprofilefetch(
+          endpoint: "entities/filter/users",
+          filterPayload: request.getuserprofile(),
+        );
+      }
+
+      if (profileProvider.userprofile.isNotEmpty) {
+        userData = profileProvider.userprofile;
+      } else if (merged.isNotEmpty) {
+        userData = merged;
+      }
       await getProfilePercentage();
 
       if (mounted) {
@@ -121,7 +137,7 @@ class _AccountScreen extends State<AccountScreen> {
         });
       }
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint("getuserprofile error: $e");
     }
   }
 
@@ -829,26 +845,24 @@ class PersonalDetailsCard extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: isotheruser
-                      ? () => ExternalLauncher.email(user["mail"] ?? "")
+                      ? () => ExternalLauncher.email(user["email"] ?? user["mail"] ?? "")
                       : null,
                   child: _infoTile(
                     icon: Icons.email_rounded,
                     title: Translate.t("profile.email"),
-                    value: user["mail"] ?? "N/A",
-                    // valueColor: isotheruser ? AppColors.primary : null,
+                    value: user["email"] ?? user["mail"] ?? "N/A",
                     isDark: isDark,
                   ),
                 ),
 
                 GestureDetector(
                   onTap: isotheruser
-                      ? () => ExternalLauncher.call(user["phone"] ?? "")
+                      ? () => ExternalLauncher.call(user["mobile_number"] ?? user["phone"] ?? user["mobile"] ?? "")
                       : null,
                   child: _infoTile(
                     icon: Icons.phone_rounded,
                     title: Translate.t("profile.phone"),
-                    // valueColor: isotheruser ? AppColors.primary : null,
-                    value: user["phone"] ?? "N/A",
+                    value: user["mobile_number"] ?? user["phone"] ?? user["mobile"] ?? "N/A",
                     isDark: isDark,
                   ),
                 ),

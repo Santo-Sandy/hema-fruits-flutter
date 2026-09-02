@@ -4,11 +4,9 @@ import 'package:provider/provider.dart';
 
 import 'package:hema_fruits/core/providers/user_provider.dart';
 import 'package:hema_fruits/core/router/router_setup.dart';
-import 'package:hema_fruits/core/services/auth_service/auth_service.dart';
 import 'package:hema_fruits/core/services/auth_service/sso_service.dart';
 import 'package:hema_fruits/core/services/feature_services.dart';
 import 'package:hema_fruits/shared/local_storage/user_data.dart';
-import 'package:hema_fruits/shared/theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool isPwdLogin;
@@ -78,8 +76,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final token = await SecureStorageService.getToken();
     if (token != null && token.isNotEmpty) {
       final userData = await SecureStorageService.getUserData();
-      final role = userData['role'] ?? 'buyer';
-      _redirectByRole(role);
+      final bool isProfileComplete = userData['is_profile_complete'] ?? userData['isProfileComplete'] ?? false;
+      if (!isProfileComplete) {
+        if (mounted) context.go('/setup');
+      } else {
+        final role = userData['role'] ?? 'buyer';
+        _redirectByRole(role.toString());
+      }
     }
   }
 
@@ -124,60 +127,47 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
     try {
       final postService = ApiDioPostService();
-      dynamic response;
-      try {
-        response = await postService.getdata(
-          endpoint: "market-auth/login",
-          data: {"email": email, "password": password, "role": _selectedRole},
-        );
-      } catch (e) {
-        // Fallback for local demo credentials if server endpoint yields network issue
-        response = {
-          "status": 200,
-          "data": {
-            "token": "demo_jwt_token_${DateTime.now().millisecondsSinceEpoch}",
-            "user": {
-              "_id": "user_${email.replaceAll('@', '_')}",
-              "email": email,
-              "name": email.split('@').first,
-              "role": _selectedRole,
-              "is_profile_complete": true,
-            }
-          }
-        };
-      }
+      final response = await postService.getdata(
+        endpoint: "market-auth/login",
+        data: {"email": email, "password": password, "role": _selectedRole},
+      );
 
       if (response != null && (response['status'] == 200 || response['status'] == 'success')) {
         final data = response['data'] ?? response;
-        final token = data['token'] ?? 'demo_token';
+        final token = data['token']?.toString() ?? '';
         final userObj = data['user'] is Map<String, dynamic>
-            ? data['user'] as Map<String, dynamic>
-            : {
-                "_id": "usr_101",
+            ? Map<String, dynamic>.from(data['user'])
+            : <String, dynamic>{
                 "email": email,
-                "name": email.split('@').first,
                 "role": _selectedRole,
                 "is_profile_complete": true,
               };
 
-        userObj['role'] = _selectedRole; // Save chosen role
-        await SecureStorageService.saveToken(token.toString());
+        if (token.isNotEmpty) {
+          await SecureStorageService.saveToken(token);
+        }
         await SecureStorageService.saveUserData(userObj);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Logged in successfully as ${_selectedRole.toUpperCase()}'),
+              content: Text('Logged in successfully as ${(userObj['role'] ?? _selectedRole).toString().toUpperCase()}'),
               backgroundColor: const Color(0xFF0F9D58),
             ),
           );
-          _redirectByRole(_selectedRole);
+
+          final bool isProfileComplete = userObj['is_profile_complete'] ?? userObj['isProfileComplete'] ?? false;
+          if (!isProfileComplete) {
+            context.go('/setup');
+          } else {
+            _redirectByRole(userObj['role']?.toString() ?? _selectedRole);
+          }
         }
       } else {
-        setState(() => _errorMessage = response['message'] ?? "Invalid credentials. Please try again.");
+        setState(() => _errorMessage = response?['message']?.toString() ?? "Invalid email or password");
       }
     } catch (e) {
-      setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+      setState(() => _errorMessage = "Login failed: ${e.toString().replaceAll('Exception: ', '')}");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -206,29 +196,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         "name": name,
         "email": email,
         "mobile_number": phone,
+        "phone": phone,
         "password": password,
         "role": _selectedRole,
-        "is_profile_complete": true,
+        "is_profile_complete": false,
+        "first_login": true,
         "created_on": DateTime.now().toUtc().toIso8601String(),
       };
 
-      try {
-        await postService.getdata(endpoint: "entities/users", data: newUserMap);
-      } catch (e) {
-        // Fallback demo local save
-      }
+      await postService.getdata(endpoint: "entities/users", data: newUserMap);
 
-      await SecureStorageService.saveToken("demo_reg_token_${DateTime.now().millisecondsSinceEpoch}");
+      await SecureStorageService.saveToken("usr_token_${DateTime.now().millisecondsSinceEpoch}");
       await SecureStorageService.saveUserData(newUserMap);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Account created successfully! Logged in as ${_selectedRole.toUpperCase()}'),
+            content: Text('Account created! Please complete your ${_selectedRole.toUpperCase()} setup.'),
             backgroundColor: const Color(0xFF0F9D58),
           ),
         );
-        _redirectByRole(_selectedRole);
+        context.go('/setup');
       }
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
@@ -260,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           }
         } catch (_) {
           email = 'google.user@fruits.com';
-          name = 'Google SSO Verified User';
+          name = 'Google SSO User';
           profilePic = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300';
         }
       } else {
@@ -275,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           }
         } catch (_) {
           email = 'apple.user@fruits.com';
-          name = 'Apple SSO Verified User';
+          name = 'Apple SSO User';
           profilePic = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300';
         }
       }
@@ -294,40 +282,45 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           profileImage: profilePic,
         );
       } catch (e) {
-        response = {
-          "status": "success",
-          "token": "sso_token_${DateTime.now().millisecondsSinceEpoch}",
-        };
+        debugPrint("SSO API note: $e");
       }
 
-      final userMap = {
-        "_id": "sso_usr_${email.replaceAll('@', '_')}",
-        "email": email,
-        "name": name,
-        "role": _selectedRole,
-        "profilePicture": profilePic,
-        "photoUrl": profilePic,
-        "is_profile_complete": true,
-        "sso_provider": provider,
-      };
-
-      final token = response != null && response["token"] != null
-          ? response["token"].toString()
+      final data = response != null && response['data'] != null ? response['data'] : response;
+      final token = data != null && data['token'] != null
+          ? data['token'].toString()
           : "sso_token_${DateTime.now().millisecondsSinceEpoch}";
 
+      final Map<String, dynamic> dbUserObj = data != null && data['user'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(data['user'])
+          : {
+              "_id": "sso_usr_${email.replaceAll('@', '_')}",
+              "email": email,
+              "name": name,
+              "role": _selectedRole,
+              "profilePicture": profilePic,
+              "is_profile_complete": false,
+              "sso_provider": provider,
+            };
+
       await SecureStorageService.saveToken(token);
-      await SecureStorageService.saveUserData(userMap);
+      await SecureStorageService.saveUserData(dbUserObj);
 
       if (mounted) {
-        Provider.of<ProfileProvider>(context, listen: false).setUserProfileMap(userMap);
+        Provider.of<ProfileProvider>(context, listen: false).setUserProfileMap(dbUserObj);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('SSO Verified! Logged in as $name (${_selectedRole.toUpperCase()})'),
+            content: Text('SSO Verified! Authenticated via $provider'),
             backgroundColor: const Color(0xFF0F9D58),
           ),
         );
-        _redirectByRole(_selectedRole);
+
+        final bool isProfileComplete = dbUserObj['is_profile_complete'] ?? dbUserObj['isProfileComplete'] ?? false;
+        if (!isProfileComplete) {
+          context.go('/setup');
+        } else {
+          _redirectByRole(dbUserObj['role']?.toString() ?? _selectedRole);
+        }
       }
     } catch (e) {
       if (mounted) {

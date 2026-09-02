@@ -63,8 +63,6 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(seconds: 2));
 
-    bool? isprofileLocal =
-        await SecureStorageService.getprofilestatus() ?? false;
     final String token = await SecureStorageService.getToken() ?? '';
     if (token.isEmpty) {
       bool login = false;
@@ -73,36 +71,45 @@ class _SplashScreenState extends State<SplashScreen>
       } catch (e) {
         debugPrintStack();
       }
+      if (!mounted) return;
       context.go('/login', extra: login);
       return;
     }
+
     final userdata = await SecureStorageService.getUserData();
-    final filterRequest = FilterRequest(userId: userdata['_id']);
-    await context.read<ProfileProvider>().userprofilefetch(
-      endpoint: "entities/filter/users",
-      filterPayload: filterRequest.getuserprofile(),
-    );
-    final bool isprofile = userdata['isProfileComplete'] ?? false;
+    if (userdata['_id'] != null) {
+      try {
+        final filterRequest = FilterRequest(userId: userdata['_id']);
+        if (mounted) {
+          await context.read<ProfileProvider>().userprofilefetch(
+            endpoint: "entities/filter/users",
+            filterPayload: filterRequest.getuserprofile(),
+          );
+        }
+      } catch (e) {
+        debugPrint('Fetch user profile error: $e');
+      }
+    }
 
-    // if (!isprofileLocal) {
-    //   if (token != '' && !isprofile) {
-    //     context.go('/profilesetup');
-    //     return;
-    //   }
-    // }
-    // if (userdata['initializer_screen'] == "Dashboard") {
-    //   context.go(RoutePath.dashboard);
-    // } else if (userdata['initializer_screen'] == "BiddingScreen") {
-    //   // context.go(RoutePath.home);
-    //   context.go(RoutePath.salesBuyBidding);
-    // } else if (userdata['initializer_screen'] == "Marketplace") {
-    //   context.go(RoutePath.home);
-    // } else {
-    //   context.go(RoutePath.dashboard);
-    // }
+    if (!mounted) return;
+    final latestUserdata = await SecureStorageService.getUserData();
+    final bool isProfileComplete = latestUserdata['is_profile_complete'] ?? latestUserdata['isProfileComplete'] ?? false;
+    final bool firstLogin = latestUserdata['first_login'] ?? false;
 
-    
+    // Check whether setup is required for 1st time user or incomplete profile
+    if (!isProfileComplete || firstLogin) {
+      context.go('/setup');
+      return;
+    }
+
+    final role = latestUserdata['role'] ?? 'buyer';
+    if (role == 'admin') {
+      context.go(RoutePath.dashboard);
+    } else if (role == 'processor' || role == 'seller') {
+      context.go('/marketplace');
+    } else {
       context.go(RoutePath.home);
+    }
     return;
   }
 

@@ -56,39 +56,45 @@ class ProfileProvider extends BaseProvider {
       );
 
       if (response['status'] == 200) {
-        final responseData = response['data'][0]['response'];
-        await SecureStorageService.saveUserProfileData(responseData[0]);
-        await UserRepository.instance.clearMyProfile();
-        await UserRepository.instance.saveMyProfile(
-          Map<String, dynamic>.from(responseData[0]),
-        );
-        userprofile = Map<String, dynamic>.from(responseData[0]);
-        if (userprofile['status'] == 'deactive' ||
-            userprofile['role'] == 'admin') {
-          final authservice = AuthService();
-          await authservice.signOut();
-          ContextManager contexts = ContextManager();
-          final context = contexts.getScreenContext(contexts.currentPage);
-          if (context == null) {
-            debugPrint("FCM: No context for navigation");
-            return;
+        final responseData = response['data']?[0]?['response'];
+        if (responseData != null && responseData is List && responseData.isNotEmpty) {
+          final profileMap = Map<String, dynamic>.from(responseData[0]);
+          await SecureStorageService.saveUserProfileData(profileMap);
+          await UserRepository.instance.clearMyProfile();
+          await UserRepository.instance.saveMyProfile(profileMap);
+          userprofile = profileMap;
+          if (userprofile['status'] == 'deactive' || userprofile['status'] == 'blocked') {
+            final authservice = AuthService();
+            await authservice.signOut();
+            ContextManager contexts = ContextManager();
+            final context = contexts.getScreenContext(contexts.currentPage);
+            if (context != null) {
+              bool login = false;
+              try {
+                login = await InitialFunction.layoutLogin();
+              } catch (e) {
+                debugPrintStack();
+              }
+              context.go('/login', extra: login);
+            }
           }
-          bool login = false;
-          try {
-            login = await InitialFunction.layoutLogin();
-          } catch (e) {
-            debugPrintStack();
-          }
-          context.go('/login', extra: login);
+          notifyListeners();
+          return;
         }
-        notifyListeners();
       } else {
         setError(response.statusMessage);
       }
     } catch (e) {
-      debugPrintStack();
+      debugPrint("userprofilefetch error: $e");
     }
-    userprofile = UserRepository.instance.getMyProfile() ?? {};
+    
+    // Fallback to locally saved profile/user data if API response didn't return data
+    final savedProfile = UserRepository.instance.getMyProfile();
+    if (savedProfile != null && savedProfile.isNotEmpty) {
+      userprofile = savedProfile;
+    } else {
+      userprofile = await SecureStorageService.getUserData();
+    }
     setLoading(false);
     isLoading = false;
     notifyListeners();

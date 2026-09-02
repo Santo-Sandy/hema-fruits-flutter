@@ -57,6 +57,7 @@ import 'package:hema_fruits/features/screens/ecommerce/wishlist/wishlist_screen.
 import 'package:hema_fruits/features/screens/ecommerce/address/addresses_screen.dart';
 import 'package:hema_fruits/features/screens/ecommerce/search/search_screen.dart';
 import 'package:hema_fruits/features/screens/ecommerce/product/product_reviews_screen.dart';
+import 'package:hema_fruits/features/auth/user_setup_screen.dart';
 import 'package:hema_fruits/features/screens/ecommerce/orders/order_success_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -68,6 +69,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/setup',
+      builder: (context, state) => const UserSetupScreen(),
     ),
     GoRoute(
       path: '/login',
