@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 // ── Result wrapper ────────────────────────────────────────────────────────────
 class ApiResult<T> {
   final T? data;
@@ -29,16 +31,29 @@ class AppConfig {
   static String _imageurl = "https://cerp.sgp1.digitaloceanspaces.com/";
   Dio get dio => _dio;
 
-  static const _baseUrl = 'http://10.97.30.182:7002/';
-  // static const _baseUrl = 'http://192.168.1.9:7002/';
-  // static const _baseUrl = 'http://10.0.0.151:7004/';
+  static String get baseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:7002/';
+    }
+    return 'http://10.97.30.182:7002/';
+  }
 
   static String get imageurl => _imageurl;
+
+  static String resolveImageUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) {
+      final base = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+      return '$base$url';
+    }
+    return '${_imageurl.endsWith('/') ? _imageurl : '$_imageurl/'}$url';
+  }
 
   Future<void> init() async {
     _dio = Dio(
       BaseOptions(
-        baseUrl: _baseUrl,
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         headers: {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hema_fruits/core/router/router_setup.dart';
 import 'package:hema_fruits/features/auth/company.dart';
 import 'package:hema_fruits/features/auth/login.dart';
+import 'package:hema_fruits/features/auth/register_screen.dart';
 import 'package:hema_fruits/features/auth/profile.dart';
 import 'package:hema_fruits/features/auth/profile_helpers.dart';
 import 'package:hema_fruits/features/layouts/main_layout.dart';
@@ -75,6 +76,13 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const UserSetupScreen(),
     ),
     GoRoute(
+      path: '/register',
+      builder: (context, state) {
+        final role = state.uri.queryParameters['role'];
+        return RegisterScreen(initialRole: role);
+      },
+    ),
+    GoRoute(
       path: '/login',
       builder: (_, state) {
         final extra = state.extra as bool? ?? false;
@@ -83,19 +91,19 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/login/admin',
-      builder: (_, _) => const AdminLoginScreen(),
+      builder: (_, _) => const LoginScreen(),
     ),
     GoRoute(
       path: '/login/seller',
-      builder: (_, _) => const SellerLoginScreen(),
+      builder: (_, _) => const LoginScreen(),
     ),
     GoRoute(
       path: '/login/customer',
-      builder: (_, _) => const CustomerLoginScreen(),
+      builder: (_, _) => const LoginScreen(),
     ),
     GoRoute(
       path: '/login/user',
-      builder: (_, _) => const CustomerLoginScreen(),
+      builder: (_, _) => const LoginScreen(),
     ),
     GoRoute(
       path: RoutePath.personalInfo,

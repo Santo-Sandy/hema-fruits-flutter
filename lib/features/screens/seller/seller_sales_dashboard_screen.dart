@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:hema_fruits/core/config/app_config.dart';
+import 'package:hema_fruits/core/models/ecommerce_models.dart';
+import 'package:hema_fruits/core/repositories/ecommerce_repository.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
 import 'package:hema_fruits/shared/theme/app_colors.dart';
 
 class SellerSalesDashboardScreen extends StatefulWidget {
@@ -10,310 +15,428 @@ class SellerSalesDashboardScreen extends StatefulWidget {
 }
 
 class _SellerSalesDashboardScreenState extends State<SellerSalesDashboardScreen> {
-  // Product Selling Stocks Data Breakdown
-  final List<Map<String, dynamic>> _productStockSales = [
-    {
-      "productName": "Organic Alphonso Mangoes",
-      "category": "Fruits",
-      "pricePerUnit": 180,
-      "unit": "Kg",
-      "initialStock": 1000,
-      "stockRemaining": 450,
-      "unitsSold": 550,
-      "revenueEarned": 99000,
-      "salesRate": 0.55,
-      "image": "https://images.unsplash.com/photo-1553279768-865429fa0078?w=300",
-    },
-    {
-      "productName": "Raw Cashew Nuts (W240)",
-      "category": "RCN / Cashew",
-      "pricePerUnit": 720,
-      "unit": "Kg",
-      "initialStock": 2000,
-      "stockRemaining": 1200,
-      "unitsSold": 800,
-      "revenueEarned": 576000,
-      "salesRate": 0.40,
-      "image": "https://images.unsplash.com/photo-1599599810694-b5b37304c041?w=300",
-    },
-    {
-      "productName": "Export Grade Bananas",
-      "category": "Fruits",
-      "pricePerUnit": 45,
-      "unit": "Kg",
-      "initialStock": 1500,
-      "stockRemaining": 0,
-      "unitsSold": 1500,
-      "revenueEarned": 67500,
-      "salesRate": 1.00,
-      "image": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300",
-    },
-    {
-      "productName": "Fresh Shimla Apples",
-      "category": "Fruits",
-      "pricePerUnit": 160,
-      "unit": "Kg",
-      "initialStock": 500,
-      "stockRemaining": 25,
-      "unitsSold": 475,
-      "revenueEarned": 76000,
-      "salesRate": 0.95,
-      "image": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300",
-    },
-  ];
+  final EcommerceRepository _repository = EcommerceRepository();
+  List<StoreProduct> _sellerProducts = [];
+  bool _isLoading = true;
+  String _sellerName = 'Seller Hub';
+  String _sellerId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
+    final user = await SecureStorageService.getUserData() ?? {};
+    _sellerId = user['_id']?.toString() ?? 'usr_seller_seed_001';
+    _sellerName = user['store_name']?.toString().isNotEmpty == true
+        ? user['store_name']
+        : (user['name'] ?? 'Seller Partner');
+
+    try {
+      final products = await _repository.getProducts(sellerId: _sellerId);
+      if (mounted) {
+        setState(() {
+          _sellerProducts = products;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final totalRevenue = _productStockSales.fold<double>(
-        0, (sum, item) => sum + (item['revenueEarned'] as num).toDouble());
-    final totalUnitsSold = _productStockSales.fold<int>(
-        0, (sum, item) => sum + (item['unitsSold'] as int));
-    final totalStockRemaining = _productStockSales.fold<int>(
-        0, (sum, item) => sum + (item['stockRemaining'] as int));
+    int totalStock = 0;
+    double estimatedValue = 0;
+    int lowStockCount = 0;
+
+    for (final p in _sellerProducts) {
+      for (final v in p.variants) {
+        totalStock += v.stockQuantity;
+        estimatedValue += v.stockQuantity * v.sellingPrice;
+        if (v.stockQuantity <= 10 && v.stockQuantity > 0) {
+          lowStockCount++;
+        }
+      }
+    }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1565C0),
         elevation: 2,
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Seller Sales Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
-            Text('Selling Stock Breakdown Per Product', style: TextStyle(fontSize: 11, color: Colors.white70)),
+            const Text(
+              'Seller Business Dashboard',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+            ),
+            Text(
+              '$_sellerName • Inventory Performance',
+              style: const TextStyle(fontSize: 11, color: Colors.white70),
+            ),
           ],
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Refresh',
+            onPressed: _loadDashboardData,
+          ),
+          IconButton(
             icon: const Icon(Icons.add_box_rounded, color: Colors.white),
-            tooltip: 'Add Stock',
-            onPressed: () => context.push('/seller/add-stock'),
+            tooltip: 'Add Produce Stock',
+            onPressed: () async {
+              await context.push('/seller/add-stock');
+              _loadDashboardData();
+            },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Overview KPI Banner
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1565C0)))
+          : RefreshIndicator(
+              onRefresh: _loadDashboardData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Overview KPI Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF1565C0).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('TOTAL SALES REVENUE',
-                              style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
-                          SizedBox(height: 4),
-                          Text('₹8,18,500',
-                              style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'ESTIMATED INVENTORY VALUE',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '₹${estimatedValue.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 26),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          const Divider(color: Colors.white24, height: 1),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _MetricSubItem(
+                                  label: 'Listed Products',
+                                  value: '${_sellerProducts.length}',
+                                  icon: Icons.inventory_2_outlined,
+                                ),
+                              ),
+                              Expanded(
+                                child: _MetricSubItem(
+                                  label: 'Total Available Units',
+                                  value: '$totalStock units',
+                                  icon: Icons.pie_chart_outline_rounded,
+                                ),
+                              ),
+                              Expanded(
+                                child: _MetricSubItem(
+                                  label: 'Low Stock Alerts',
+                                  value: '$lowStockCount',
+                                  icon: Icons.warning_amber_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
+                    ),
+                    const SizedBox(height: 22),
+
+                    // Quick Actions
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionButton(
+                            label: 'Add Produce Stock',
+                            icon: Icons.add_circle_outline,
+                            color: const Color(0xFF0F9D58),
+                            onTap: () async {
+                              await context.push('/seller/add-stock');
+                              _loadDashboardData();
+                            },
+                          ),
                         ),
-                        child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 28),
-                      ),
-                    ],
-                  ),
-                  const Divider(color: Colors.white24, height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildHeaderKpi('UNITS SOLD', '$totalUnitsSold Kg', Icons.shopping_bag_outlined),
-                      _buildHeaderKpi('LIVE STOCK', '$totalStockRemaining Kg', Icons.inventory_outlined),
-                      _buildHeaderKpi('PRODUCTS', '${_productStockSales.length} Items', Icons.grid_view_outlined),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActionButton(
+                            label: 'View My Inventory',
+                            icon: Icons.list_alt_rounded,
+                            color: const Color(0xFF1565C0),
+                            onTap: () => context.push('/seller/stocks'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Section Heading: My Live Products
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'My Live Listed Products',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => context.push('/seller/stocks'),
+                          child: const Text('See All', style: TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    if (_sellerProducts.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(28),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.inventory_2_outlined, size: 44, color: Colors.grey[400]),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No active products found for your store',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Click "Add Produce Stock" to list your first agricultural harvest.',
+                              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ..._sellerProducts.map((prod) {
+                        final v = prod.variants.isNotEmpty ? prod.variants.first : null;
+                        final price = v?.sellingPrice ?? 0.0;
+                        final stock = v?.stockQuantity ?? 0;
+                        final unit = v?.weightUnit ?? 'Kg';
+                        final img = prod.images.isNotEmpty ? prod.images.first : '';
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: 65,
+                                  height: 65,
+                                  color: const Color(0xFFF1F5F9),
+                                  child: img.isNotEmpty
+                                      ? Image.network(
+                                          AppConfig.resolveImageUrl(img),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => const Icon(Icons.eco, color: Color(0xFF0F9D58)),
+                                        )
+                                      : const Icon(Icons.eco, color: Color(0xFF0F9D58)),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      prod.title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Grade: ${prod.qualityGrade} • ${prod.originRegion}',
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '₹${price.toStringAsFixed(0)} / $unit  •  Stock: $stock $unit',
+                                      style: const TextStyle(
+                                        color: Color(0xFF1565C0),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, color: Colors.grey),
+                            ],
+                          ),
+                        );
+                      }),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-
-            // Section Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Selling Stocks Breakdown',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-                ),
-                TextButton.icon(
-                  onPressed: () => context.push('/seller/stocks'),
-                  icon: const Icon(Icons.inventory, size: 16, color: Color(0xFF1565C0)),
-                  label: const Text('Manage Stocks', style: TextStyle(color: Color(0xFF1565C0), fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Product Cards List
-            ..._productStockSales.map((product) {
-              final double salesRate = product['salesRate'] as double;
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              product['image'],
-                              width: 56,
-                              height: 56,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                width: 56,
-                                height: 56,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.eco, color: Colors.grey),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product['productName'],
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Category: ${product['category']} • ₹${product['pricePerUnit']} / ${product['unit']}',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: salesRate >= 0.8
-                                  ? Colors.green[100]
-                                  : salesRate >= 0.4
-                                      ? Colors.blue[100]
-                                      : Colors.orange[100],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              salesRate >= 1.0
-                                  ? 'SOLD OUT'
-                                  : '${(salesRate * 100).toInt()}% Sold',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: salesRate >= 0.8
-                                    ? Colors.green[800]
-                                    : salesRate >= 0.4
-                                        ? Colors.blue[800]
-                                        : Colors.orange[800],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Sales Progress Bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: salesRate,
-                          minHeight: 8,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            salesRate >= 0.8
-                                ? Colors.green
-                                : salesRate >= 0.4
-                                    ? Colors.blue
-                                    : Colors.orange,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Stock Metrics Details Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildDetailCol('Stock Remaining', '${product['stockRemaining']} ${product['unit']}'),
-                          _buildDetailCol('Units Sold', '${product['unitsSold']} ${product['unit']}'),
-                          _buildDetailCol('Revenue', '₹${product['revenueEarned']}', isBold: true),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
     );
   }
+}
 
-  Widget _buildHeaderKpi(String title, String val, IconData icon) {
+class _MetricSubItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _MetricSubItem({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.white70, size: 14),
+            Icon(icon, size: 14, color: Colors.white70),
             const SizedBox(width: 4),
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w500),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
+}
 
-  Widget _buildDetailCol(String title, String val, {bool isBold = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-        const SizedBox(height: 2),
-        Text(
-          val,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-            color: isBold ? const Color(0xFF1565C0) : Colors.grey[900],
-          ),
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
-      ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

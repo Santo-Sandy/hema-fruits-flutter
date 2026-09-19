@@ -1,12 +1,14 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'package:hema_fruits/core/config/app_config.dart';
 import 'package:hema_fruits/core/providers/user_provider.dart';
 import 'package:hema_fruits/core/router/router_setup.dart';
 import 'package:hema_fruits/core/services/auth_service/sso_service.dart';
-import 'package:hema_fruits/core/services/feature_services.dart';
 import 'package:hema_fruits/shared/local_storage/user_data.dart';
+import 'package:hema_fruits/shared/theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool isPwdLogin;
@@ -14,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 
   const LoginScreen({
     super.key,
-    required this.isPwdLogin,
+    this.isPwdLogin = false,
     this.initialRole,
   });
 
@@ -27,23 +29,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Mode: 0 for Login, 1 for Register
-  int _authTab = 0;
-
-  // Selected Role: 'buyer', 'processor' (merchant/seller), 'admin'
+  // Selected Role for quick context
   String _selectedRole = 'buyer';
 
-  // Form Controllers - Login
-  final TextEditingController _loginEmailController = TextEditingController();
-  final TextEditingController _loginPasswordController = TextEditingController();
-  bool _obscureLoginPassword = true;
-
-  // Form Controllers - Register
-  final TextEditingController _regNameController = TextEditingController();
-  final TextEditingController _regEmailController = TextEditingController();
-  final TextEditingController _regPhoneController = TextEditingController();
-  final TextEditingController _regPasswordController = TextEditingController();
-  bool _obscureRegPassword = true;
+  // Form Controllers
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -60,13 +52,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   void _initializeAnimations() {
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     _animationController.forward();
@@ -76,44 +68,50 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final token = await SecureStorageService.getToken();
     if (token != null && token.isNotEmpty) {
       final userData = await SecureStorageService.getUserData();
-      final bool isProfileComplete = userData['is_profile_complete'] ?? userData['isProfileComplete'] ?? false;
-      if (!isProfileComplete) {
-        if (mounted) context.go('/setup');
-      } else {
-        final role = userData['role'] ?? 'buyer';
-        _redirectByRole(role.toString());
-      }
+      final role = userData['role'] ?? 'buyer';
+      _redirectByRole(role.toString());
     }
   }
 
   void _redirectByRole(String role) {
     if (!mounted) return;
     if (role == 'admin') {
-      context.go(RoutePath.dashboard);
+      context.go('/admin/control');
     } else if (role == 'processor' || role == 'seller') {
-      context.go('/marketplace');
+      context.go('/seller/sales-dashboard');
     } else {
       context.go(RoutePath.home);
     }
   }
 
+  void _fillDemoCredentials(String role) {
+    setState(() {
+      _selectedRole = role;
+      if (role == 'admin') {
+        _emailController.text = 'admin@fruits.com';
+        _passwordController.text = 'password1234';
+      } else if (role == 'processor' || role == 'seller') {
+        _emailController.text = 'seller@fruits.com';
+        _passwordController.text = 'password1234';
+      } else {
+        _emailController.text = 'buyer@fruits.com';
+        _passwordController.text = 'password1234';
+      }
+      _errorMessage = null;
+    });
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
-    _loginEmailController.dispose();
-    _loginPasswordController.dispose();
-    _regNameController.dispose();
-    _regEmailController.dispose();
-    _regPhoneController.dispose();
-    _regPasswordController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  // ── AUTHENTICATION ACTIONS ────────────────────────────────────────────────
-
   Future<void> _handleLogin() async {
-    final email = _loginEmailController.text.trim();
-    final password = _loginPasswordController.text;
+    final email = _emailController.text.trim().toLowerCase();
+    final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       setState(() => _errorMessage = "Please enter both email and password");
@@ -126,14 +124,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     });
 
     try {
-      final postService = ApiDioPostService();
-      final response = await postService.getdata(
-        endpoint: "market-auth/login",
+      final dio = AppConfig.instance.dio;
+      final response = await dio.post(
+        "market-auth/login",
         data: {"email": email, "password": password, "role": _selectedRole},
       );
 
-      if (response != null && (response['status'] == 200 || response['status'] == 'success')) {
-        final data = response['data'] ?? response;
+      if (response.data != null &&
+          (response.data['status'] == 200 || response.data['status'] == 'success')) {
+        final data = response.data['data'] ?? response.data;
         final token = data['token']?.toString() ?? '';
         final userObj = data['user'] is Map<String, dynamic>
             ? Map<String, dynamic>.from(data['user'])
@@ -145,81 +144,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
         if (token.isNotEmpty) {
           await SecureStorageService.saveToken(token);
+          AppConfig.instance.updateToken(token);
         }
         await SecureStorageService.saveUserData(userObj);
 
         if (mounted) {
+          context.read<ProfileProvider>().setProfile(userObj);
+
+          final role = (userObj['role'] ?? _selectedRole).toString().toLowerCase();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Logged in successfully as ${(userObj['role'] ?? _selectedRole).toString().toUpperCase()}'),
+              content: Text('Welcome back, ${userObj['name'] ?? email}! (${role.toUpperCase()})'),
               backgroundColor: const Color(0xFF0F9D58),
             ),
           );
 
-          final bool isProfileComplete = userObj['is_profile_complete'] ?? userObj['isProfileComplete'] ?? false;
-          if (!isProfileComplete) {
-            context.go('/setup');
-          } else {
-            _redirectByRole(userObj['role']?.toString() ?? _selectedRole);
-          }
+          _redirectByRole(role);
         }
       } else {
-        setState(() => _errorMessage = response?['message']?.toString() ?? "Invalid email or password");
+        setState(() => _errorMessage = response.data?['message']?.toString() ?? "Invalid email or password");
       }
+    } on DioException catch (e) {
+      setState(() => _errorMessage = AppConfig.parseError(e));
     } catch (e) {
-      setState(() => _errorMessage = "Login failed: ${e.toString().replaceAll('Exception: ', '')}");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _handleRegister() async {
-    final name = _regNameController.text.trim();
-    final email = _regEmailController.text.trim();
-    final phone = _regPhoneController.text.trim();
-    final password = _regPasswordController.text;
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      setState(() => _errorMessage = "Please fill in all required registration fields");
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final postService = ApiDioPostService();
-      final newUserMap = {
-        "_id": "usr_${DateTime.now().millisecondsSinceEpoch}",
-        "name": name,
-        "email": email,
-        "mobile_number": phone,
-        "phone": phone,
-        "password": password,
-        "role": _selectedRole,
-        "is_profile_complete": false,
-        "first_login": true,
-        "created_on": DateTime.now().toUtc().toIso8601String(),
-      };
-
-      await postService.getdata(endpoint: "entities/users", data: newUserMap);
-
-      await SecureStorageService.saveToken("usr_token_${DateTime.now().millisecondsSinceEpoch}");
-      await SecureStorageService.saveUserData(newUserMap);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Account created! Please complete your ${_selectedRole.toUpperCase()} setup.'),
-            backgroundColor: const Color(0xFF0F9D58),
-          ),
-        );
-        context.go('/setup');
-      }
-    } catch (e) {
-      setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+      setState(() => _errorMessage = "Login failed: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -272,237 +220,184 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (name.isEmpty) name = '$provider SSO User';
       if (profilePic.isEmpty) profilePic = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300';
 
-      dynamic response;
-      try {
-        response = await ssoLogin(
-          email: email,
-          providerId: "sso_${provider}_${DateTime.now().millisecondsSinceEpoch}",
-          providerBy: provider == 'google' ? 'google.com' : 'apple.com',
-          name: name,
-          profileImage: profilePic,
-        );
-      } catch (e) {
-        debugPrint("SSO API note: $e");
-      }
+      final dio = AppConfig.instance.dio;
+      final response = await dio.post(
+        'market-auth/sso-login',
+        data: {
+          'email': email,
+          'provider_id': 'sso_${provider}_${DateTime.now().millisecondsSinceEpoch}',
+          'provider_by': provider == 'google' ? 'google.com' : 'apple.com',
+          'name': name,
+          'profilePicture': profilePic,
+        },
+      );
 
-      final data = response != null && response['data'] != null ? response['data'] : response;
-      final token = data != null && data['token'] != null
-          ? data['token'].toString()
-          : "sso_token_${DateTime.now().millisecondsSinceEpoch}";
-
-      final Map<String, dynamic> dbUserObj = data != null && data['user'] is Map<String, dynamic>
+      final data = response.data?['data'] ?? response.data;
+      final token = data?['token']?.toString() ?? 'sso_token_${DateTime.now().millisecondsSinceEpoch}';
+      final userObj = data?['user'] is Map<String, dynamic>
           ? Map<String, dynamic>.from(data['user'])
           : {
-              "_id": "sso_usr_${email.replaceAll('@', '_')}",
-              "email": email,
-              "name": name,
-              "role": _selectedRole,
-              "profilePicture": profilePic,
-              "is_profile_complete": false,
-              "sso_provider": provider,
+              '_id': 'usr_sso_${email.replaceAll('@', '_')}',
+              'email': email,
+              'name': name,
+              'role': _selectedRole,
+              'profilePicture': profilePic,
+              'is_profile_complete': true,
             };
 
       await SecureStorageService.saveToken(token);
-      await SecureStorageService.saveUserData(dbUserObj);
+      AppConfig.instance.updateToken(token);
+      await SecureStorageService.saveUserData(userObj);
 
       if (mounted) {
-        Provider.of<ProfileProvider>(context, listen: false).setUserProfileMap(dbUserObj);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('SSO Verified! Authenticated via $provider'),
-            backgroundColor: const Color(0xFF0F9D58),
-          ),
-        );
-
-        final bool isProfileComplete = dbUserObj['is_profile_complete'] ?? dbUserObj['isProfileComplete'] ?? false;
-        if (!isProfileComplete) {
-          context.go('/setup');
-        } else {
-          _redirectByRole(dbUserObj['role']?.toString() ?? _selectedRole);
-        }
+        context.read<ProfileProvider>().setProfile(userObj);
+        final role = (userObj['role'] ?? _selectedRole).toString().toLowerCase();
+        _redirectByRole(role);
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
-      }
+      if (mounted) setState(() => _errorMessage = 'SSO login error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // ── BUILD UI ─────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF7F9FB),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
                 position: _slideAnimation,
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  padding: const EdgeInsets.all(28.0),
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  padding: const EdgeInsets.all(32.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24.0),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 20,
+                        color: Colors.black.withValues(alpha: 0.07),
+                        blurRadius: 24,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Brand Header Logo & Title
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
+                      // Brand Logo & Header
+                      Center(
                         child: Container(
-                          padding: const EdgeInsets.all(12),
-                          color: const Color(0xFF0F9D58).withOpacity(0.1),
-                          child: const Icon(
-                            Icons.shopping_basket_rounded,
-                            size: 44,
-                            color: Color(0xFF0F9D58),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0F9D58), Color(0xFF0B8043)],
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F9D58).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.shopping_basket_rounded, size: 36, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Center(
+                        child: Text(
+                          'Hema Fruits',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.5,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Hema Fruits Marketplace',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1B5E20),
-                        ),
-                      ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Fresh Agricultural Produce Trading',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
+                      Center(
+                        child: Text(
+                          'Fresh Fruits, Vegetables & Organic Nuts',
+                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Auth Mode Switcher (Login vs Register)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _authTab = 0),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: _authTab == 0 ? Colors.white : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(26),
-                                    boxShadow: _authTab == 0
-                                        ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)]
-                                        : [],
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Sign In',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: _authTab == 0 ? const Color(0xFF0F9D58) : Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _authTab = 1),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: _authTab == 1 ? Colors.white : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(26),
-                                    boxShadow: _authTab == 1
-                                        ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)]
-                                        : [],
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Register',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: _authTab == 1 ? const Color(0xFF0F9D58) : Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Role Selector Chip List (Role-Based Login)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'SELECT YOUR ROLE:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
-                            color: Colors.grey[700],
-                          ),
+                      // Quick Demo Role Pills
+                      const Text(
+                        'QUICK DEMO LOGIN:',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.8,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          _buildRoleChip('buyer', 'Buyer 🛒', Icons.shopping_cart_outlined),
+                          Expanded(
+                            child: _DemoRoleButton(
+                              label: 'Customer',
+                              icon: Icons.person_rounded,
+                              color: const Color(0xFF0F9D58),
+                              isSelected: _selectedRole == 'buyer',
+                              onTap: () => _fillDemoCredentials('buyer'),
+                            ),
+                          ),
                           const SizedBox(width: 8),
-                          _buildRoleChip('processor', 'Merchant 🏪', Icons.storefront_outlined),
+                          Expanded(
+                            child: _DemoRoleButton(
+                              label: 'Seller',
+                              icon: Icons.storefront_rounded,
+                              color: const Color(0xFF1565C0),
+                              isSelected: _selectedRole == 'processor' || _selectedRole == 'seller',
+                              onTap: () => _fillDemoCredentials('processor'),
+                            ),
+                          ),
                           const SizedBox(width: 8),
-                          _buildRoleChip('admin', 'Admin 🛡️', Icons.admin_panel_settings_outlined),
+                          Expanded(
+                            child: _DemoRoleButton(
+                              label: 'Admin',
+                              icon: Icons.shield_rounded,
+                              color: const Color(0xFF7C3AED),
+                              isSelected: _selectedRole == 'admin',
+                              onTap: () => _fillDemoCredentials('admin'),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
 
-                      // Error Banner
                       if (_errorMessage != null) ...[
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.red[200]!),
+                            color: const Color(0xFFFFEBEE),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFFCDD2)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                              const SizedBox(width: 10),
+                              const Icon(Icons.error_outline, color: Color(0xFFD32F2F), size: 20),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _errorMessage!,
-                                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: Color(0xFFD32F2F),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -511,164 +406,144 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         const SizedBox(height: 16),
                       ],
 
-                      // Form Body based on _authTab
-                      if (_authTab == 0) _buildLoginForm() else _buildRegisterForm(),
+                      // Email Field
+                      _buildLabel('EMAIL ADDRESS'),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: _inputDecoration(
+                          hint: 'user@fruits.com',
+                          icon: Icons.email_outlined,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-                      const SizedBox(height: 18),
+                      // Password Field
+                      _buildLabel('PASSWORD'),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          hintText: '••••••••',
+                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                          prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF0F9D58), size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.grey[500],
+                              size: 20,
+                            ),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: Color(0xFF0F9D58), width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
-                      // Divider for SSO Single Sign-On Verification
+                      // Sign In Button
+                      SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _handleLogin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F9D58),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            elevation: 2,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                )
+                              : const Text(
+                                  'SIGN IN',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Social Logins
                       Row(
                         children: [
                           Expanded(child: Divider(color: Colors.grey[300])),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              _authTab == 0 ? 'OR VERIFY & SIGN IN WITH SSO' : 'OR REGISTER WITH SSO',
-                              style: TextStyle(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('OR', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                           ),
                           Expanded(child: Divider(color: Colors.grey[300])),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
 
-                      // Google SSO & Apple SSO Buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _isLoading ? null : () => _handleSSOLogin('google'),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                side: BorderSide(color: Colors.grey[300]!),
-                                backgroundColor: Colors.white,
-                              ),
-                              icon: Container(
-                                padding: const EdgeInsets.all(3),
-                                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.redAccent),
-                                child: const Text('G', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                              ),
-                              label: const Text(
-                                'Google SSO',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 13),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _isLoading ? null : () => _handleSSOLogin('apple'),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                side: const BorderSide(color: Colors.black87),
-                                backgroundColor: Colors.black,
-                              ),
-                              icon: const Icon(Icons.apple, color: Colors.white, size: 20),
-                              label: const Text(
-                                'Apple SSO',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
-                              ),
-                            ),
-                          ),
-                        ],
+                      OutlinedButton.icon(
+                        onPressed: _isLoading ? null : () => _handleSSOLogin('google'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          side: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        icon: Image.network(
+                          'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
+                          width: 20,
+                          height: 20,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 24),
+                        ),
+                        label: const Text(
+                          'Continue with Google',
+                          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
-                      // Divider for quick login options
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.grey[300])),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              'QUICK DEMO LOGIN',
-                              style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold),
+                      // Register Link
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't have an account?",
+                              style: TextStyle(color: Colors.grey[700], fontSize: 13),
                             ),
-                          ),
-                          Expanded(child: Divider(color: Colors.grey[300])),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Role-Filtered Quick Demo Login Buttons
-                      Column(
-                        children: [
-                          if (_selectedRole == 'admin') ...[
-                            _buildQuickLoginButton(
-                              label: 'Super Admin Account',
-                              email: 'admin@fruits.com',
-                              role: 'admin',
-                              icon: Icons.admin_panel_settings_rounded,
-                              color: const Color(0xFF4A148C),
-                              subtitle: 'admin@fruits.com • password1234',
-                            ),
-                            const SizedBox(height: 8),
-                            _buildQuickLoginButton(
-                              label: 'Operations Manager Account',
-                              email: 'operations@fruits.com',
-                              role: 'admin',
-                              icon: Icons.security_rounded,
-                              color: const Color(0xFF6C3483),
-                              subtitle: 'operations@fruits.com • password1234',
-                            ),
-                          ] else if (_selectedRole == 'processor') ...[
-                            _buildQuickLoginButton(
-                              label: 'Green Valley Organic Farms',
-                              email: 'seller@fruits.com',
-                              role: 'processor',
-                              icon: Icons.storefront_rounded,
-                              color: const Color(0xFF0F9D58),
-                              subtitle: 'seller@fruits.com • password1234',
-                            ),
-                            const SizedBox(height: 8),
-                            _buildQuickLoginButton(
-                              label: 'Hema Cashew & Nut Traders',
-                              email: 'merchant@fruits.com',
-                              role: 'processor',
-                              icon: Icons.agriculture_rounded,
-                              color: const Color(0xFF1565C0),
-                              subtitle: 'merchant@fruits.com • password1234',
-                            ),
-                            const SizedBox(height: 8),
-                            _buildQuickLoginButton(
-                              label: 'Sunrise Agricultural Orchards',
-                              email: 'supplier@fruits.com',
-                              role: 'processor',
-                              icon: Icons.eco_rounded,
-                              color: const Color(0xFFE65100),
-                              subtitle: 'supplier@fruits.com • password1234',
-                            ),
-                          ] else ...[
-                            _buildQuickLoginButton(
-                              label: 'Anita Sharma (Retail Buyer)',
-                              email: 'buyer@fruits.com',
-                              role: 'buyer',
-                              icon: Icons.shopping_basket_rounded,
-                              color: const Color(0xFF0F9D58),
-                              subtitle: 'buyer@fruits.com • password1234',
-                            ),
-                            const SizedBox(height: 8),
-                            _buildQuickLoginButton(
-                              label: 'Fresh Market Wholesalers',
-                              email: 'wholesaler@fruits.com',
-                              role: 'buyer',
-                              icon: Icons.local_shipping_rounded,
-                              color: const Color(0xFF0288D1),
-                              subtitle: 'wholesaler@fruits.com • password1234',
-                            ),
-                            const SizedBox(height: 8),
-                            _buildQuickLoginButton(
-                              label: 'Rajesh Patel (Direct Customer)',
-                              email: 'customer@fruits.com',
-                              role: 'buyer',
-                              icon: Icons.person_pin_rounded,
-                              color: const Color(0xFF7B1FA2),
-                              subtitle: 'customer@fruits.com • password1234',
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              onTap: () => context.go('/register'),
+                              child: const Text(
+                                'Sign Up Now',
+                                style: TextStyle(
+                                  color: Color(0xFF0F9D58),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
                             ),
                           ],
-                        ],
+                        ),
                       ),
                     ],
                   ),
@@ -681,274 +556,90 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildRoleChip(String roleKey, String label, IconData icon) {
-    final selected = _selectedRole == roleKey;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedRole = roleKey),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFF0F9D58) : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? const Color(0xFF0F9D58) : Colors.grey[300]!,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 18, color: selected ? Colors.white : Colors.grey[700]),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: selected ? Colors.white : Colors.grey[800],
-                ),
-              ),
-            ],
-          ),
+  Widget _buildLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6, left: 2),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+          color: Color(0xFF64748B),
         ),
       ),
     );
   }
 
-  Widget _buildLoginForm() {
-    return Column(
-      children: [
-        TextField(
-          controller: _loginEmailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            labelText: 'Email Address',
-            hintText: 'user@example.com',
-            prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF0F9D58)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: _loginPasswordController,
-          obscureText: _obscureLoginPassword,
-          decoration: InputDecoration(
-            labelText: 'Password',
-            prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF0F9D58)),
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureLoginPassword ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey,
-              ),
-              onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () {},
-            child: const Text('Forgot Password?', style: TextStyle(color: Color(0xFF0F9D58), fontSize: 12)),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _handleLogin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0F9D58),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              elevation: 2,
-            ),
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)
-                : Text(
-                    'SIGN IN AS ${_selectedRole.toUpperCase()}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      color: Colors.white,
-                    ),
-                  ),
-          ),
-        ),
-      ],
+  InputDecoration _inputDecoration({required String hint, required IconData icon}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+      prefixIcon: Icon(icon, color: const Color(0xFF0F9D58), size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF0F9D58), width: 2),
+      ),
     );
   }
+}
 
-  Widget _buildRegisterForm() {
-    return Column(
-      children: [
-        TextField(
-          controller: _regNameController,
-          decoration: InputDecoration(
-            labelText: 'Full Name',
-            hintText: 'John Doe',
-            prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF0F9D58)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _regEmailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            labelText: 'Email Address',
-            hintText: 'user@example.com',
-            prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF0F9D58)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _regPhoneController,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            labelText: 'Mobile Phone',
-            hintText: '9876543210',
-            prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF0F9D58)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _regPasswordController,
-          obscureText: _obscureRegPassword,
-          decoration: InputDecoration(
-            labelText: 'Password',
-            prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF0F9D58)),
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureRegPassword ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey,
-              ),
-              onPressed: () => setState(() => _obscureRegPassword = !_obscureRegPassword),
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _handleRegister,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0F9D58),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              elevation: 2,
-            ),
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)
-                : Text(
-                    'REGISTER AS ${_selectedRole.toUpperCase()}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      color: Colors.white,
-                    ),
-                  ),
-          ),
-        ),
-      ],
-    );
-  }
+class _DemoRoleButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  Widget _buildQuickLoginButton({
-    required String label,
-    required String email,
-    required String role,
-    required IconData icon,
-    required Color color,
-    required String subtitle,
-  }) {
+  const _DemoRoleButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        setState(() => _selectedRole = role);
-        _loginEmailController.text = email;
-        _loginPasswordController.text = 'password1234';
-        _authTab = 0;
-        _handleLogin();
-      },
-      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.07),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-          borderRadius: BorderRadius.circular(14),
+          color: isSelected ? color.withValues(alpha: 0.12) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey[300]!,
+            width: isSelected ? 1.5 : 1,
+          ),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                  ),
-                ],
+            Icon(icon, size: 18, color: isSelected ? color : Colors.grey[600]),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? color : const Color(0xFF334155),
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color),
           ],
         ),
       ),
     );
   }
 }
-
-class AdminLoginScreen extends StatelessWidget {
-  const AdminLoginScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoginScreen(isPwdLogin: true, initialRole: 'admin');
-  }
-}
-
-class SellerLoginScreen extends StatelessWidget {
-  const SellerLoginScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoginScreen(isPwdLogin: true, initialRole: 'processor');
-  }
-}
-
-class CustomerLoginScreen extends StatelessWidget {
-  const CustomerLoginScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoginScreen(isPwdLogin: true, initialRole: 'buyer');
-  }
-}
-

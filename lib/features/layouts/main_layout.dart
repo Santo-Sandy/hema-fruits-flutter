@@ -6,12 +6,14 @@ import 'package:hema_fruits/core/services/offline_queue_service.dart';
 import 'package:hema_fruits/core/utils/Responsive/app_breakpoints.dart';
 import 'package:hema_fruits/features/layouts/tablet_sidebar.dart';
 import 'package:hema_fruits/shared/theme/app_colors.dart';
+import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'app_header.dart';
 import 'app_footer.dart';
+import 'web_navbar.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -129,16 +131,21 @@ class _MainLayoutState extends State<MainLayout> {
         AppBreakpoints.isTabletContext(context) ||
         AppBreakpoints.isDesktopContext(context);
 
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWebOrWideScreen = kIsWeb || screenWidth > 850;
+
     return PopScope(
       canPop: !isLockedScreen,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && isLockedScreen) _showExitDialog();
       },
       child: Scaffold(
-        appBar: const AppHeader(),
+        appBar: isWebOrWideScreen
+            ? const WebNavBar()
+            : const AppHeader(),
         body: Row(
           children: [
-            if (MediaQuery.of(context).size.width > 768)
+            if (!isWebOrWideScreen && screenWidth > 768)
               TabletSidebar(
                 currentIndex: tabIndex,
                 onTap: (index) => _handleTabTap(index, role: role),
@@ -147,9 +154,8 @@ class _MainLayoutState extends State<MainLayout> {
               fit: FlexFit.tight,
               child: Column(
                 children: [
-                  // const _ConnectivityBanner(),
                   Flexible(fit: FlexFit.tight, child: widget.child),
-                  if (MediaQuery.of(context).size.width <= 768 && !keyboardOpen)
+                  if (!isWebOrWideScreen && !keyboardOpen)
                     AppFooter(
                       currentIndex: tabIndex,
                       onTap: (index, {homeTabIndex, activityTabIndex}) =>

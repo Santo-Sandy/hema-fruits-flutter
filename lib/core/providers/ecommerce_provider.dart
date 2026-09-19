@@ -19,6 +19,8 @@ class EcommCatalogProvider extends ChangeNotifier {
   // Wishlist state
   final List<String> _wishlistProductIds = [];
 
+  String _selectedSellerId = '';
+
   List<StoreCategory> get categories => _categories;
   List<StoreProduct> get products => _products;
   List<StoreBanner> get banners => _banners;
@@ -26,6 +28,7 @@ class EcommCatalogProvider extends ChangeNotifier {
   bool get hasError => _hasError;
   String get errorMessage => _errorMessage;
   String get selectedCategoryId => _selectedCategoryId;
+  String get selectedSellerId => _selectedSellerId;
   String get searchQuery => _searchQuery;
   bool get isOrganicOnly => _isOrganicOnly;
   List<String> get wishlistProductIds => _wishlistProductIds;
@@ -40,7 +43,7 @@ class EcommCatalogProvider extends ChangeNotifier {
       final results = await Future.wait([
         _repository.getCategories(),
         _repository.getBanners(),
-        _repository.getProducts(),
+        _repository.getProducts(sellerId: _selectedSellerId),
       ]);
       _categories = results[0] as List<StoreCategory>;
       _banners = results[1] as List<StoreBanner>;
@@ -57,6 +60,11 @@ class EcommCatalogProvider extends ChangeNotifier {
 
   void selectCategory(String categoryId) {
     _selectedCategoryId = (_selectedCategoryId == categoryId) ? '' : categoryId;
+    fetchFilteredProducts();
+  }
+
+  void selectSellerId(String sellerId) {
+    _selectedSellerId = (_selectedSellerId == sellerId) ? '' : sellerId;
     fetchFilteredProducts();
   }
 
@@ -80,6 +88,7 @@ class EcommCatalogProvider extends ChangeNotifier {
         categoryId: _selectedCategoryId,
         search: _searchQuery,
         organic: _isOrganicOnly,
+        sellerId: _selectedSellerId,
       );
     } catch (e) {
       _hasError = true;
@@ -89,6 +98,14 @@ class EcommCatalogProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<List<StoreProduct>> fetchProductsBySeller(String sellerId) async {
+    try {
+      return await _repository.getProducts(sellerId: sellerId);
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<void> retry() => initCatalog();
@@ -224,6 +241,7 @@ class EcommCartProvider extends ChangeNotifier {
       _addresses.isNotEmpty ? _addresses[_selectedAddressIndex] : {};
 
   int get totalCount => _items.fold(0, (sum, item) => sum + item.quantity);
+  int get itemCount => totalCount;
 
   double get itemTotal =>
       _items.fold(0.0, (sum, item) => sum + item.totalPrice);
@@ -267,6 +285,13 @@ class EcommCartProvider extends ChangeNotifier {
     if (_selectedAddressIndex >= _addresses.length) {
       _selectedAddressIndex = 0;
     }
+    notifyListeners();
+  }
+
+  void clearLocalCart() {
+    _items.clear();
+    _appliedCoupon = '';
+    _couponDiscount = 0.0;
     notifyListeners();
   }
 

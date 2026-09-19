@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:hema_fruits/core/config/app_config.dart';
 import 'package:hema_fruits/core/models/ecommerce_models.dart';
 import 'package:dio/dio.dart';
@@ -39,11 +40,13 @@ class EcommerceRepository {
     String? categoryId,
     String? search,
     bool? organic,
+    String? sellerId,
   }) async {
     final res = await _dio.get('/api/v1/store/products', queryParameters: {
       if (categoryId != null && categoryId.isNotEmpty) 'category_id': categoryId,
       if (search != null && search.isNotEmpty) 'search': search,
       if (organic == true) 'organic': 'true',
+      if (sellerId != null && sellerId.isNotEmpty) 'seller_id': sellerId,
     });
     if (res.data != null && res.data['products'] != null) {
       final List list = res.data['products'];
@@ -207,6 +210,58 @@ class EcommerceRepository {
   Future<bool> cancelOrder(String orderId) async {
     final res = await _dio.delete('/api/v1/store/orders/$orderId');
     return res.data != null && res.data['success'] == true;
+  }
+
+  // ── ADMIN & STATS APIs ───────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> getAdminStats() async {
+    try {
+      final res = await _dio.get('/api/v1/store/admin/stats');
+      if (res.data != null && res.data['stats'] != null) {
+        return Map<String, dynamic>.from(res.data['stats']);
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getStoreUsers({String? role}) async {
+    try {
+      final res = await _dio.get('/api/v1/store/users', queryParameters: {
+        if (role != null && role.isNotEmpty) 'role': role,
+      });
+      if (res.data != null && res.data['users'] != null) {
+        final List list = res.data['users'];
+        return list.map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return [];
+  }
+
+  // ── FILE UPLOAD API ───────────────────────────────────────────────────────
+
+  Future<String?> uploadImage(Uint8List bytes, String filename) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+        'folders': 'marketplace/stocks',
+      });
+      final res = await _dio.post('file/marketplace/stocks', data: formData);
+      if (res.data != null && res.data['data'] != null) {
+        final List dataList = res.data['data'];
+        if (dataList.isNotEmpty) {
+          final first = dataList[0];
+          final rawUrl = first['url']?.toString() ?? first['path']?.toString();
+          return AppConfig.resolveImageUrl(rawUrl);
+        }
+      }
+    } catch (e) {
+      // Return null on failure
+    }
+    return null;
   }
 
   // ── HELPERS ───────────────────────────────────────────────────────────────

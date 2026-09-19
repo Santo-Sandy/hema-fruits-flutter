@@ -115,6 +115,8 @@ class StoreProduct {
   final double avgRating;
   final int reviewCount;
   final bool isFeatured;
+  final String sellerId;
+  final String sellerName;
 
   StoreProduct({
     required this.id,
@@ -133,6 +135,8 @@ class StoreProduct {
     required this.avgRating,
     required this.reviewCount,
     required this.isFeatured,
+    this.sellerId = '',
+    this.sellerName = '',
   });
 
   ProductVariant get defaultVariant => variants.isNotEmpty ? variants.first : ProductVariant(id: '', productId: '', weightValue: 1, weightUnit: 'kg', packagingType: 'Box', mrp: 0, sellingPrice: 0, stockQuantity: 0, sku: '', isAvailable: false);
@@ -157,6 +161,8 @@ class StoreProduct {
       avgRating: (json['avg_rating'] ?? 4.5).toDouble(),
       reviewCount: json['review_count'] ?? 0,
       isFeatured: json['is_featured'] ?? false,
+      sellerId: json['seller_id'] ?? '',
+      sellerName: json['seller_name'] ?? '',
     );
   }
 }
@@ -289,6 +295,7 @@ class CartSummaryModel {
 class StoreOrderModel {
   final String id;
   final String orderNumber;
+  final String userId;
   final List<CartItemModel> items;
   final String orderStatus;
   final String paymentMethod;
@@ -300,6 +307,7 @@ class StoreOrderModel {
   StoreOrderModel({
     required this.id,
     required this.orderNumber,
+    this.userId = '',
     required this.items,
     required this.orderStatus,
     required this.paymentMethod,
@@ -313,6 +321,7 @@ class StoreOrderModel {
     return StoreOrderModel(
       id: json['id'] ?? '',
       orderNumber: json['order_number'] ?? '',
+      userId: json['user_id'] ?? '',
       items: (json['items'] as List? ?? [])
           .map((e) => CartItemModel.fromJson(e))
           .toList(),

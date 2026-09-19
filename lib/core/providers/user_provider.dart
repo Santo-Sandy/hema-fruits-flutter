@@ -26,6 +26,8 @@ class ProfileProvider extends BaseProvider {
     notifyListeners();
   }
 
+  void setProfile(Map<String, dynamic> data) => setUserProfileMap(data);
+
   Future<void> rewardfetch({required String endpoint}) async {
     setLoading(true);
     UserService userService = UserService();

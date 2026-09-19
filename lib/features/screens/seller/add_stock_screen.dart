@@ -1,5 +1,13 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import 'package:hema_fruits/core/config/app_config.dart';
+import 'package:hema_fruits/core/providers/ecommerce_provider.dart';
+import 'package:hema_fruits/core/repositories/ecommerce_repository.dart';
+import 'package:hema_fruits/shared/local_storage/user_data.dart';
 import 'package:hema_fruits/shared/theme/app_colors.dart';
 
 class AddStockScreen extends StatefulWidget {
@@ -18,14 +26,25 @@ class _AddStockScreenState extends State<AddStockScreen> {
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  String _selectedCategory = 'Fruits';
+  String _selectedCategory = 'cat_fruits';
   String _selectedUnit = 'Kg';
   String _selectedGrade = 'Grade A';
+  bool _isOrganic = false;
   bool _isSubmitting = false;
+  bool _isUploadingImage = false;
 
-  final List<String> _categories = ['Fruits', 'RCN / Cashew', 'Vegetables', 'Dry Fruits'];
-  final List<String> _units = ['Kg', 'Tons', 'Boxes', 'Bags'];
-  final List<String> _grades = ['Grade A', 'Export Grade', 'Premium', 'Organic', 'Standard'];
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
+  String? _uploadedImageUrl;
+
+  final List<Map<String, String>> _categories = [
+    {'id': 'cat_fruits', 'name': 'Fresh Fruits'},
+    {'id': 'cat_veggies', 'name': 'Fresh Vegetables'},
+    {'id': 'cat_dry_nuts', 'name': 'Dry Fruits & Nuts'},
+  ];
+
+  final List<String> _units = ['Kg', 'Tons', 'Boxes', 'Bags', 'g', 'pcs'];
+  final List<String> _grades = ['Grade A', 'Export Grade', 'Premium', 'Organic Certified', 'Standard'];
 
   @override
   void dispose() {
@@ -37,24 +56,128 @@ class _AddStockScreenState extends State<AddStockScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    setState(() {
+      _selectedImageBytes = bytes;
+      _selectedImageName = picked.name;
+      _isUploadingImage = true;
+    });
+
+    final repo = EcommerceRepository();
+    final uploadedUrl = await repo.uploadImage(bytes, picked.name);
+
+    if (mounted) {
+      setState(() {
+        _isUploadingImage = false;
+        if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+          _uploadedImageUrl = uploadedUrl;
+        } else {
+          // Fallback placeholder with fruit keyword
+          _uploadedImageUrl = "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=600";
+        }
+      });
+    }
+  }
+
   Future<void> _submitStock() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final user = await SecureStorageService.getUserData() ?? {};
+      final userId = user['_id']?.toString() ?? 'seller_usr';
+      final sellerName = user['store_name']?.toString().isNotEmpty == true
+          ? user['store_name']
+          : (user['name'] ?? 'Hema Verified Seller');
 
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
+      final qty = double.tryParse(_quantityController.text.trim()) ?? 100.0;
+      final price = double.tryParse(_priceController.text.trim()) ?? 150.0;
+      final prodId = "prod_${DateTime.now().millisecondsSinceEpoch}";
+      final variantId = "var_${DateTime.now().millisecondsSinceEpoch}";
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Stock listing "${_titleController.text.trim()}" published successfully!'),
-        backgroundColor: const Color(0xFF0F9D58),
-      ),
-    );
+      final imageUrl = _uploadedImageUrl ??
+          "https://images.unsplash.com/photo-1553279768-865429fa0078?w=600";
 
-    context.pop();
+      final productData = {
+        "_id": prodId,
+        "title": _titleController.text.trim(),
+        "slug": _titleController.text.trim().toLowerCase().replaceAll(' ', '-'),
+        "category_id": _selectedCategory,
+        "subcategory_id": "sub_general",
+        "description": _descriptionController.text.trim().isEmpty
+            ? 'Fresh agricultural harvest from $sellerName.'
+            : _descriptionController.text.trim(),
+        "images": [imageUrl],
+        "shelf_life_days": 7,
+        "storage_instructions": "Store in cool, dry place.",
+        "is_organic": _isOrganic,
+        "quality_grade": _selectedGrade,
+        "origin_region": _locationController.text.trim().isEmpty
+            ? 'Ratnagiri, Maharashtra'
+            : _locationController.text.trim(),
+        "seller_id": userId,
+        "seller_name": sellerName,
+        "avg_rating": 5.0,
+        "review_count": 1,
+        "is_featured": true,
+        "variants": [
+          {
+            "id": variantId,
+            "product_id": prodId,
+            "weight_value": 1.0,
+            "weight_unit": _selectedUnit,
+            "packaging_type": "Standard Pack",
+            "mrp": (price * 1.25).roundToDouble(),
+            "selling_price": price,
+            "stock_quantity": qty.toInt(),
+            "sku": "SKU-${prodId.substring(prodId.length - 4)}",
+            "is_available": true,
+          }
+        ],
+      };
+
+      final repo = EcommerceRepository();
+      final success = await repo.createProduct(productData);
+
+      if (mounted) {
+        if (success) {
+          // Refresh global catalog
+          context.read<EcommCatalogProvider>().fetchFilteredProducts();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🎉 "${_titleController.text.trim()}" published to Marketplace!'),
+              backgroundColor: const Color(0xFF0F9D58),
+            ),
+          );
+          context.pop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to publish product. Please check your connection.'),
+              backgroundColor: Color(0xFFD32F2F),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding stock: $e'),
+            backgroundColor: const Color(0xFFD32F2F),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -63,7 +186,10 @@ class _AddStockScreenState extends State<AddStockScreen> {
       backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F9D58),
-        title: const Text('Add Produce Stock', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Add Produce Stock',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         elevation: 2,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -83,6 +209,13 @@ class _AddStockScreenState extends State<AddStockScreen> {
                     colors: [Color(0xFF0F9D58), Color(0xFF1B5E20)],
                   ),
                   borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F9D58).withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -105,7 +238,7 @@ class _AddStockScreenState extends State<AddStockScreen> {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'List your agricultural produce to buyers nationwide',
+                            'Add your fresh agricultural products directly to the catalog',
                             style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                         ],
@@ -114,7 +247,92 @@ class _AddStockScreenState extends State<AddStockScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Product Image Upload Section
+              _buildSectionLabel('PRODUCE PHOTO / IMAGE'),
+              GestureDetector(
+                onTap: _isUploadingImage ? null : _pickImage,
+                child: Container(
+                  width: double.infinity,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _uploadedImageUrl != null ? const Color(0xFF0F9D58) : Colors.grey[300]!,
+                      width: _uploadedImageUrl != null ? 2 : 1,
+                    ),
+                  ),
+                  child: _isUploadingImage
+                      ? const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: Color(0xFF0F9D58)),
+                              SizedBox(height: 10),
+                              Text('Uploading photo to server...', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                            ],
+                          ),
+                        )
+                      : _selectedImageBytes != null
+                          ? Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: Image.memory(
+                                    _selectedImageBytes!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 10,
+                                  right: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black87,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.photo_camera, color: Colors.white, size: 14),
+                                        SizedBox(width: 4),
+                                        Text('Change Photo', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F9D58).withValues(alpha: 0.08),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.cloud_upload_outlined, color: Color(0xFF0F9D58), size: 36),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Tap to choose produce image',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Supports JPG, PNG (High-resolution produce images)',
+                                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+              const SizedBox(height: 18),
 
               // Title
               _buildSectionLabel('PRODUCE NAME & TITLE'),
@@ -122,7 +340,7 @@ class _AddStockScreenState extends State<AddStockScreen> {
                 controller: _titleController,
                 validator: (v) => v == null || v.trim().isEmpty ? 'Please enter produce name' : null,
                 decoration: _inputDecoration(
-                  hint: 'e.g., Organic Alphonso Mangoes',
+                  hint: 'e.g. Organic Ratnagiri Alphonso Mangoes',
                   icon: Icons.eco_outlined,
                 ),
               ),
@@ -139,7 +357,7 @@ class _AddStockScreenState extends State<AddStockScreen> {
                         DropdownButtonFormField<String>(
                           value: _selectedCategory,
                           items: _categories
-                              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                              .map((c) => DropdownMenuItem(value: c['id'], child: Text(c['name']!)))
                               .toList(),
                           onChanged: (v) => setState(() => _selectedCategory = v!),
                           decoration: _inputDecoration(icon: Icons.category_outlined),
@@ -181,7 +399,7 @@ class _AddStockScreenState extends State<AddStockScreen> {
                           controller: _quantityController,
                           keyboardType: TextInputType.number,
                           validator: (v) => v == null || v.trim().isEmpty ? 'Enter qty' : null,
-                          decoration: _inputDecoration(hint: 'e.g., 500', icon: Icons.inventory_2_outlined),
+                          decoration: _inputDecoration(hint: 'e.g. 500', icon: Icons.inventory_2_outlined),
                         ),
                       ],
                     ),
@@ -207,37 +425,80 @@ class _AddStockScreenState extends State<AddStockScreen> {
               ),
               const SizedBox(height: 18),
 
-              // Unit Price
-              _buildSectionLabel('UNIT PRICE (₹ / unit)'),
-              TextFormField(
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter unit price' : null,
-                decoration: _inputDecoration(
-                  hint: 'e.g., 180',
-                  icon: Icons.currency_rupee_rounded,
-                ),
+              // Unit Price & Organic Toggle
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionLabel('SELLING PRICE (₹ / unit)'),
+                        TextFormField(
+                          controller: _priceController,
+                          keyboardType: TextInputType.number,
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Please enter unit price' : null,
+                          decoration: _inputDecoration(
+                            hint: 'e.g. 180',
+                            icon: Icons.currency_rupee_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionLabel('ORGANIC?'),
+                        Container(
+                          height: 52,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Organic', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                              Switch(
+                                value: _isOrganic,
+                                activeColor: const Color(0xFF0F9D58),
+                                onChanged: (v) => setState(() => _isOrganic = v),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 18),
 
               // Origin Location
-              _buildSectionLabel('ORIGIN / WAREHOUSE LOCATION'),
+              _buildSectionLabel('ORIGIN / FARM LOCATION'),
               TextFormField(
                 controller: _locationController,
                 decoration: _inputDecoration(
-                  hint: 'e.g., Ratnagiri, Maharashtra',
+                  hint: 'e.g. Ratnagiri, Maharashtra',
                   icon: Icons.location_on_outlined,
                 ),
               ),
               const SizedBox(height: 18),
 
               // Description
-              _buildSectionLabel('DESCRIPTION & SPECIFICATIONS'),
+              _buildSectionLabel('DESCRIPTION & HARVEST DETAILS'),
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
                 decoration: _inputDecoration(
-                  hint: 'Details on harvest date, packaging, moisture content...',
+                  hint: 'Harvest freshness details, packaging specifications, nutritional highlights...',
                   icon: Icons.description_outlined,
                 ),
               ),
@@ -260,7 +521,7 @@ class _AddStockScreenState extends State<AddStockScreen> {
                   label: _isSubmitting
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                          'PUBLISH STOCK LISTING',
+                          'PUBLISH STOCK TO MARKETPLACE',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 15,

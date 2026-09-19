@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import 'package:hema_fruits/core/config/app_config.dart';
+import 'package:hema_fruits/core/models/ecommerce_models.dart';
+import 'package:hema_fruits/core/repositories/ecommerce_repository.dart';
 import 'package:hema_fruits/shared/theme/app_colors.dart';
 
 class AdminControlScreen extends StatefulWidget {
@@ -12,125 +17,78 @@ class AdminControlScreen extends StatefulWidget {
 class _AdminControlScreenState extends State<AdminControlScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final EcommerceRepository _repository = EcommerceRepository();
 
-  // Mock / Initial Admin Data State
-  final List<Map<String, dynamic>> _products = [
-    {
-      "id": "p1",
-      "name": "Fresh Organic Alphonso Mangoes",
-      "category": "Fruits",
-      "price": 180,
-      "unit": "Kg",
-      "stock": 450,
-      "status": "In Stock",
-      "seller": "Green Valley Farms",
-      "image": "https://images.unsplash.com/photo-1553279768-865429fa0078?w=300",
-    },
-    {
-      "id": "p2",
-      "name": "Premium Raw Cashew Nuts (W240)",
-      "category": "RCN / Cashew",
-      "price": 720,
-      "unit": "Kg",
-      "stock": 1200,
-      "status": "In Stock",
-      "seller": "Hema Cashew Traders",
-      "image": "https://images.unsplash.com/photo-1599599810694-b5b37304c041?w=300",
-    },
-    {
-      "id": "p3",
-      "name": "Export Grade Cavendish Bananas",
-      "category": "Fruits",
-      "price": 45,
-      "unit": "Kg",
-      "stock": 0,
-      "status": "Out of Stock",
-      "seller": "Sunrise Orchards",
-      "image": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300",
-    },
-    {
-      "id": "p4",
-      "name": "Fresh Shimla Apples (Grade A)",
-      "category": "Fruits",
-      "price": 160,
-      "unit": "Kg",
-      "stock": 80,
-      "status": "Low Stock",
-      "seller": "Himalayan Fresh",
-      "image": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300",
-    },
-  ];
+  // Data States
+  Map<String, dynamic> _stats = {};
+  List<StoreProduct> _products = [];
+  List<Map<String, dynamic>> _users = [];
+  List<StoreOrderModel> _orders = [];
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> _users = [
-    {
-      "id": "u1",
-      "name": "Rajesh Kumar",
-      "email": "rajesh@farms.com",
-      "role": "processor",
-      "status": "Active",
-      "phone": "+91 9876543210",
-      "joined": "2025-01-15",
-    },
-    {
-      "id": "u2",
-      "name": "Anita Sharma",
-      "email": "anita@buyer.com",
-      "role": "buyer",
-      "status": "Active",
-      "phone": "+91 9123456789",
-      "joined": "2025-02-10",
-    },
-    {
-      "id": "u3",
-      "name": "Global Traders Co.",
-      "email": "info@globaltraders.com",
-      "role": "processor",
-      "status": "Deactive",
-      "phone": "+91 9988776655",
-      "joined": "2024-11-20",
-    },
-    {
-      "id": "u4",
-      "name": "Super Admin User",
-      "email": "admin@fruits.com",
-      "role": "admin",
-      "status": "Active",
-      "phone": "+91 9000000000",
-      "joined": "2024-01-01",
-    },
-  ];
-
-  final List<Map<String, dynamic>> _orders = [
-    {
-      "id": "ORD-9901",
-      "customer": "Anita Sharma",
-      "items": "Alphonso Mangoes (25 Kg)",
-      "total": 4500,
-      "status": "Processing",
-      "date": "2026-08-30",
-    },
-    {
-      "id": "ORD-9884",
-      "customer": "Fresh Market Retailers",
-      "items": "Raw Cashew Nuts (100 Kg)",
-      "total": 72000,
-      "status": "Shipped",
-      "date": "2026-08-28",
-    },
-    {
-      "id": "ORD-9750",
-      "customer": "Green Grocery Hub",
-      "items": "Shimla Apples (50 Kg)",
-      "total": 8000,
-      "status": "Delivered",
-      "date": "2026-08-25",
-    },
-  ];
+  // Filter States
+  String _selectedSellerFilter = 'ALL';
+  String _selectedCategoryFilter = 'ALL';
+  String _selectedUserRoleFilter = 'ALL';
+  String _productSearchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
+    _loadAllAdminData();
+  }
+
+  Future<void> _loadAllAdminData() async {
+    setState(() => _isLoading = true);
+    try {
+      final results = await Future.wait([
+        _repository.getAdminStats(),
+        _repository.getProducts(),
+        _repository.getStoreUsers(),
+        _repository.getOrders(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _stats = (results[0] as Map<String, dynamic>?) ?? {};
+          _products = (results[1] as List<StoreProduct>?) ?? [];
+          _users = (results[2] as List<Map<String, dynamic>>?) ?? [];
+          _orders = (results[3] as List<StoreOrderModel>?) ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteProduct(String id, String title) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Admin Action: Delete Product'),
+        content: Text('Are you sure you want to permanently remove "$title" from the marketplace catalog?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete Product'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await _repository.deleteProduct(id);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Removed "$title"'), backgroundColor: const Color(0xFF0F9D58)),
+        );
+        _loadAllAdminData();
+      }
+    }
   }
 
   @override
@@ -141,136 +99,521 @@ class _AdminControlScreenState extends State<AdminControlScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Extract distinct sellers from loaded products & users
+    final Map<String, String> sellerOptions = {'ALL': 'All Sellers'};
+    for (final p in _products) {
+      if (p.sellerId != null && p.sellerId!.isNotEmpty) {
+        sellerOptions[p.sellerId!] = p.sellerName ?? 'Seller (${p.sellerId!.substring(0, 6)})';
+      }
+    }
+    for (final u in _users) {
+      final r = (u['role'] ?? '').toString().toLowerCase();
+      if (r == 'processor' || r == 'seller') {
+        final id = (u['_id'] ?? '').toString();
+        final name = (u['store_name'] ?? u['name'] ?? 'Seller').toString();
+        if (id.isNotEmpty) sellerOptions[id] = name;
+      }
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF4A148C),
+        backgroundColor: const Color(0xFF7C3AED),
         elevation: 2,
-        title: Row(
+        title: const Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.admin_panel_settings_rounded,
-                  color: Colors.white, size: 22),
-            ),
-            const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Admin Control Hub',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
-                Text(
-                  'Platform Oversight & Management',
-                  style: TextStyle(fontSize: 11, color: Colors.white70),
-                ),
-              ],
+            Icon(Icons.shield_rounded, color: Colors.white, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Super Admin Control Center',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Refresh Data',
+            onPressed: _loadAllAdminData,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_shopping_cart, color: Colors.white),
+            tooltip: 'Add Product',
+            onPressed: () async {
+              await context.push('/seller/add-stock');
+              _loadAllAdminData();
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.amberAccent,
+          indicatorColor: Colors.white,
           indicatorWeight: 3,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           tabs: const [
-            Tab(icon: Icon(Icons.inventory_2_outlined, size: 18), text: 'Products'),
-            Tab(icon: Icon(Icons.people_outline, size: 18), text: 'Users'),
-            Tab(icon: Icon(Icons.receipt_long_outlined, size: 18), text: 'Orders'),
+            Tab(text: 'Overview', icon: Icon(Icons.dashboard_rounded, size: 18)),
+            Tab(text: 'Products', icon: Icon(Icons.inventory_2_rounded, size: 18)),
+            Tab(text: 'Users & Roles', icon: Icon(Icons.people_alt_rounded, size: 18)),
+            Tab(text: 'Live Orders', icon: Icon(Icons.local_shipping_rounded, size: 18)),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildProductsTab(),
-          _buildUsersTab(),
-          _buildOrdersTab(),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddProductDialog,
-        backgroundColor: const Color(0xFF4A148C),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Add Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED)))
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOverviewTab(),
+                _buildProductsTab(sellerOptions),
+                _buildUsersTab(),
+                _buildOrdersTab(),
+              ],
+            ),
+    );
+  }
+
+  // ── 1. OVERVIEW TAB ───────────────────────────────────────────────────────
+
+  Widget _buildOverviewTab() {
+    final totalProducts = _stats['total_products'] ?? _products.length;
+    final totalUsers = _stats['total_users'] ?? _users.length;
+    final totalSellers = _stats['total_sellers'] ?? _users.where((u) => u['role'] == 'processor' || u['role'] == 'seller').length;
+    final totalBuyers = _stats['total_buyers'] ?? _users.where((u) => u['role'] == 'buyer').length;
+    final totalOrders = _stats['total_orders'] ?? _orders.length;
+    final totalRevenue = (_stats['total_revenue'] as num?)?.toDouble() ?? 0.0;
+
+    return RefreshIndicator(
+      onRefresh: _loadAllAdminData,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // KPI Grid
+            Row(
+              children: [
+                Expanded(
+                  child: _KPICard(
+                    title: 'TOTAL PRODUCTS',
+                    value: '$totalProducts',
+                    icon: Icons.inventory_2_rounded,
+                    color: const Color(0xFF0F9D58),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _KPICard(
+                    title: 'STORE REVENUE',
+                    value: '₹${totalRevenue.toStringAsFixed(0)}',
+                    icon: Icons.monetization_on_rounded,
+                    color: const Color(0xFF1565C0),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _KPICard(
+                    title: 'REGISTERED SELLERS',
+                    value: '$totalSellers',
+                    icon: Icons.storefront_rounded,
+                    color: const Color(0xFFD97706),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _KPICard(
+                    title: 'RETAIL BUYERS',
+                    value: '$totalBuyers',
+                    icon: Icons.people_alt_rounded,
+                    color: const Color(0xFF7C3AED),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Quick Operations Row
+            const Text(
+              'Quick Admin Operations',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await context.push('/seller/add-stock');
+                      _loadAllAdminData();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F9D58),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+                    label: const Text('Create New Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _tabController.animateTo(2),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7C3AED),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.manage_accounts_rounded, color: Colors.white),
+                    label: const Text('Manage User Roles', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Recent Registered Accounts Preview
+            const Text(
+              'Recent User Registrations',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 10),
+            ..._users.take(5).map((u) {
+              final role = (u['role'] ?? 'buyer').toString();
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: role == 'admin'
+                          ? const Color(0xFF7C3AED)
+                          : role == 'processor' || role == 'seller'
+                              ? const Color(0xFF1565C0)
+                              : const Color(0xFF0F9D58),
+                      child: Text(
+                        (u['name'] ?? 'U').toString().substring(0, 1).toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            u['name'] ?? 'User',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          Text(
+                            u['email'] ?? '',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _RoleBadge(role: role),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
 
-  // ── 1. PRODUCTS & INVENTORY CONTROL TAB ────────────────────────────────────
+  // ── 2. PRODUCTS TAB WITH SELLER & CATEGORY FILTERS ─────────────────────────
 
-  Widget _buildProductsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildProductsTab(Map<String, String> sellerOptions) {
+    final filtered = _products.where((p) {
+      if (_selectedSellerFilter != 'ALL' && p.sellerId != _selectedSellerFilter) {
+        return false;
+      }
+      if (_selectedCategoryFilter != 'ALL' && p.categoryId != _selectedCategoryFilter) {
+        return false;
+      }
+      if (_productSearchQuery.isNotEmpty) {
+        final q = _productSearchQuery.toLowerCase();
+        return p.title.toLowerCase().contains(q) ||
+            p.originRegion.toLowerCase().contains(q);
+      }
+      return true;
+    }).toList();
+
+    return Column(
       children: [
-        // Summary Metrics Bar
-        Row(
-          children: [
-            _buildStatCard('Total Catalog', '${_products.length}', Icons.grid_view_rounded, Colors.purple),
-            const SizedBox(width: 10),
-            _buildStatCard(
-              'In Stock',
-              '${_products.where((p) => p['status'] == 'In Stock').length}',
-              Icons.check_circle_outline,
-              Colors.green,
-            ),
-            const SizedBox(width: 10),
-            _buildStatCard(
-              'Out of Stock',
-              '${_products.where((p) => p['status'] == 'Out of Stock').length}',
-              Icons.warning_amber_rounded,
-              Colors.red,
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
+        // Filter Controls Bar
+        Container(
+          padding: const EdgeInsets.all(14),
+          color: Colors.white,
+          child: Column(
+            children: [
+              // Search Input
+              TextField(
+                onChanged: (v) => setState(() => _productSearchQuery = v),
+                decoration: InputDecoration(
+                  hintText: 'Search catalog by product name or origin...',
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF7C3AED)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Platform Product Inventory',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-            ),
-            Text(
-              '${_products.length} Items',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.bold),
-            ),
-          ],
+              // Seller Dropdown Filter
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedSellerFilter,
+                          isExpanded: true,
+                          items: sellerOptions.entries.map((e) {
+                            return DropdownMenuItem(
+                              value: e.key,
+                              child: Text(
+                                'Seller: ${e.value}',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (v) => setState(() => _selectedSellerFilter = v ?? 'ALL'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Category Dropdown Filter
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCategoryFilter,
+                          isExpanded: true,
+                          items: const [
+                            DropdownMenuItem(value: 'ALL', child: Text('All Categories', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                            DropdownMenuItem(value: 'cat_fruits', child: Text('Fresh Fruits', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                            DropdownMenuItem(value: 'cat_veggies', child: Text('Vegetables', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                            DropdownMenuItem(value: 'cat_dry_nuts', child: Text('Dry Nuts', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                          ],
+                          onChanged: (v) => setState(() => _selectedCategoryFilter = v ?? 'ALL'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
 
-        ..._products.map((product) => Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+        // Product Count Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Showing ${filtered.length} of ${_products.length} Products',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              if (_selectedSellerFilter != 'ALL' || _selectedCategoryFilter != 'ALL')
+                TextButton(
+                  onPressed: () => setState(() {
+                    _selectedSellerFilter = 'ALL';
+                    _selectedCategoryFilter = 'ALL';
+                    _productSearchQuery = '';
+                  }),
+                  child: const Text('Reset Filters', style: TextStyle(fontSize: 12, color: Color(0xFF7C3AED))),
+                ),
+            ],
+          ),
+        ),
+
+        // Products List
+        Expanded(
+          child: filtered.isEmpty
+              ? const Center(child: Text('No products match current filters', style: TextStyle(color: Colors.grey)))
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, i) {
+                    final p = filtered[i];
+                    final v = p.variants.isNotEmpty ? p.variants.first : null;
+                    final price = v?.sellingPrice ?? 0.0;
+                    final stock = v?.stockQuantity ?? 0;
+                    final unit = v?.weightUnit ?? 'Kg';
+                    final img = p.images.isNotEmpty ? p.images.first : '';
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              color: const Color(0xFFF1F5F9),
+                              child: img.isNotEmpty
+                                  ? Image.network(
+                                      AppConfig.resolveImageUrl(img),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(Icons.eco, color: Color(0xFF0F9D58)),
+                                    )
+                                  : const Icon(Icons.eco, color: Color(0xFF0F9D58)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  p.title,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Seller: ${p.sellerName ?? p.sellerId ?? 'Direct Store'}',
+                                  style: const TextStyle(color: Color(0xFF1565C0), fontSize: 11, fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '₹${price.toStringAsFixed(0)} / $unit  •  Stock: $stock $unit  •  ${p.originRegion}',
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                            tooltip: 'Delete Product',
+                            onPressed: () => _deleteProduct(p.id, p.title),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  // ── 3. USERS TAB ──────────────────────────────────────────────────────────
+
+  Widget _buildUsersTab() {
+    final filtered = _users.where((u) {
+      if (_selectedUserRoleFilter == 'ALL') return true;
+      final role = (u['role'] ?? '').toString().toLowerCase();
+      if (_selectedUserRoleFilter == 'SELLER') return role == 'processor' || role == 'seller';
+      if (_selectedUserRoleFilter == 'BUYER') return role == 'buyer';
+      if (_selectedUserRoleFilter == 'ADMIN') return role == 'admin';
+      return true;
+    }).toList();
+
+    return Column(
+      children: [
+        // Role Filter Pills
+        Container(
+          padding: const EdgeInsets.all(12),
+          color: Colors.white,
+          child: Row(
+            children: ['ALL', 'BUYER', 'SELLER', 'ADMIN'].map((r) {
+              final isSel = _selectedUserRoleFilter == r;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(r == 'ALL' ? 'All Roles' : r),
+                  selected: isSel,
+                  onSelected: (_) => setState(() => _selectedUserRoleFilter = r),
+                  selectedColor: const Color(0xFF7C3AED).withValues(alpha: 0.15),
+                  labelStyle: TextStyle(
+                    color: isSel ? const Color(0xFF7C3AED) : const Color(0xFF64748B),
+                    fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 12,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+
+        // Users List
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: filtered.length,
+            itemBuilder: (context, i) {
+              final u = filtered[i];
+              final role = (u['role'] ?? 'buyer').toString();
+              final storeName = u['store_name']?.toString() ?? '';
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        product['image'],
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 70,
-                          height: 70,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.fastfood, color: Colors.grey),
-                        ),
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: role == 'admin'
+                          ? const Color(0xFF7C3AED)
+                          : role == 'processor' || role == 'seller'
+                              ? const Color(0xFF1565C0)
+                              : const Color(0xFF0F9D58),
+                      child: Text(
+                        (u['name'] ?? 'U').toString().substring(0, 1).toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -279,212 +622,52 @@ class _AdminControlScreenState extends State<AdminControlScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            product['name'],
+                            u['name'] ?? 'User Name',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
+                          if (storeName.isNotEmpty)
+                            Text(
+                              'Store: $storeName',
+                              style: const TextStyle(color: Color(0xFF1565C0), fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
                           Text(
-                            'Seller: ${product['seller']} • Category: ${product['category']}',
-                            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Text(
-                                '₹${product['price']} / ${product['unit']}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 14,
-                                    color: Color(0xFF4A148C)),
-                              ),
-                              const SizedBox(width: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: product['status'] == 'In Stock'
-                                      ? Colors.green[100]
-                                      : product['status'] == 'Low Stock'
-                                          ? Colors.orange[100]
-                                          : Colors.red[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${product['status']} (${product['stock']} ${product['unit']})',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: product['status'] == 'In Stock'
-                                        ? Colors.green[800]
-                                        : product['status'] == 'Low Stock'
-                                            ? Colors.orange[800]
-                                            : Colors.red[800],
-                                  ),
-                                ),
-                              ),
-                            ],
+                            '${u['email'] ?? ''} • ${u['mobile_number'] ?? u['phone'] ?? 'No phone'}',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
                           ),
                         ],
                       ),
                     ),
-                    PopupMenuButton<String>(
-                      onSelected: (val) {
-                        if (val == 'toggle_stock') {
-                          setState(() {
-                            product['status'] =
-                                product['status'] == 'In Stock' ? 'Out of Stock' : 'In Stock';
-                          });
-                        } else if (val == 'delete') {
-                          setState(() {
-                            _products.removeWhere((p) => p['id'] == product['id']);
-                          });
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'toggle_stock',
-                          child: Text(product['status'] == 'In Stock'
-                              ? 'Mark Out of Stock'
-                              : 'Mark In Stock'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Delete Product', style: TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
+                    _RoleBadge(role: role),
                   ],
                 ),
-              ),
-            )),
-      ],
-    );
-  }
-
-  // ── 2. USER & ACCESS CONTROL TAB ──────────────────────────────────────────
-
-  Widget _buildUsersTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Registered Accounts & Roles',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4A148C).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${_users.length} Users',
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
-        const SizedBox(height: 14),
-
-        ..._users.map((user) {
-          final isBlocked = user['status'] == 'Deactive';
-          final roleColor = user['role'] == 'admin'
-              ? Colors.purple
-              : user['role'] == 'processor'
-                  ? Colors.blue
-                  : Colors.green;
-
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              leading: CircleAvatar(
-                backgroundColor: roleColor.withValues(alpha: 0.15),
-                child: Icon(
-                  user['role'] == 'admin'
-                      ? Icons.admin_panel_settings
-                      : user['role'] == 'processor'
-                          ? Icons.storefront
-                          : Icons.person,
-                  color: roleColor,
-                ),
-              ),
-              title: Row(
-                children: [
-                  Text(
-                    user['name'],
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: roleColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      user['role'].toString().toUpperCase(),
-                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: roleColor),
-                    ),
-                  ),
-                ],
-              ),
-              subtitle: Text('${user['email']} • ${user['phone']}'),
-              trailing: Switch(
-                value: !isBlocked,
-                activeColor: Colors.green,
-                onChanged: (val) {
-                  setState(() {
-                    user['status'] = val ? 'Active' : 'Deactive';
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          '${user['name']} status updated to ${user['status']}'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        }),
       ],
     );
   }
 
-  // ── 3. PLATFORM ORDERS OVERVIEW TAB ───────────────────────────────────────
+  // ── 4. ORDERS TAB ─────────────────────────────────────────────────────────
 
   Widget _buildOrdersTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          children: [
-            _buildStatCard('Total Revenue', '₹84,500', Icons.payments_outlined, Colors.green),
-            const SizedBox(width: 10),
-            _buildStatCard('Active Orders', '${_orders.length}', Icons.local_shipping_outlined, Colors.blue),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        const Text(
-          'Platform Orders Status',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-        ),
-        const SizedBox(height: 12),
-
-        ..._orders.map((order) => Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
+    return _orders.isEmpty
+        ? const Center(child: Text('No orders recorded in store database', style: TextStyle(color: Colors.grey)))
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _orders.length,
+            itemBuilder: (context, i) {
+              final o = _orders[i];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8),
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -492,169 +675,139 @@ class _AdminControlScreenState extends State<AdminControlScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          order['id'],
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                              color: Color(0xFF4A148C)),
+                          'Order #${o.id.length > 8 ? o.id.substring(0, 8) : o.id}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: order['status'] == 'Delivered'
-                                ? Colors.green[100]
-                                : order['status'] == 'Shipped'
-                                    ? Colors.blue[100]
-                                    : Colors.orange[100],
-                            borderRadius: BorderRadius.circular(12),
+                            color: const Color(0xFF0F9D58).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            order['status'],
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: order['status'] == 'Delivered'
-                                  ? Colors.green[800]
-                                  : order['status'] == 'Shipped'
-                                      ? Colors.blue[800]
-                                      : Colors.orange[800],
-                            ),
+                            o.orderStatus.toUpperCase(),
+                            style: const TextStyle(color: Color(0xFF0F9D58), fontWeight: FontWeight.bold, fontSize: 10),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text('Customer: ${order['customer']}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 2),
-                    Text('Items: ${order['items']}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700])),
-                    const Divider(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Date: ${order['date']}',
-                            style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                        Text(
-                          'Total: ₹${order['total']}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 15, color: Colors.black87),
-                        ),
-                      ],
+                    const SizedBox(height: 6),
+                    Text(
+                      '${o.items.length} items  •  Grand Total: ₹${o.grandTotal.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Payment: ${o.paymentMethod}  •  User: ${o.userId}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 11),
                     ),
                   ],
                 ),
-              ),
-            )),
-      ],
-    );
+              );
+            },
+          );
   }
+}
 
-  Widget _buildStatCard(String label, String value, IconData icon, MaterialColor color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+class _KPICard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _KPICard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color[700], size: 22),
-            const SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color[900])),
-            const SizedBox(height: 2),
-            Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w500)),
-          ],
-        ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  void _showAddProductDialog() {
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final stockController = TextEditingController();
+class _RoleBadge extends StatelessWidget {
+  final String role;
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Add New Catalog Product', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Product Name',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: priceController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Price (₹)',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: stockController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Initial Stock (Kg/Units)',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A148C),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              if (nameController.text.isNotEmpty && priceController.text.isNotEmpty) {
-                setState(() {
-                  _products.insert(0, {
-                    "id": "p_${DateTime.now().millisecondsSinceEpoch}",
-                    "name": nameController.text.trim(),
-                    "category": "Fresh Produce",
-                    "price": int.tryParse(priceController.text) ?? 100,
-                    "unit": "Kg",
-                    "stock": int.tryParse(stockController.text) ?? 50,
-                    "status": "In Stock",
-                    "seller": "Admin Direct Catalog",
-                    "image": "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=300",
-                  });
-                });
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Product added to platform catalog!'), backgroundColor: Colors.green),
-                );
-              }
-            },
-            child: const Text('Add Product', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+  const _RoleBadge({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    Color bg = const Color(0xFF0F9D58);
+    String label = 'Buyer';
+
+    final r = role.toLowerCase();
+    if (r == 'admin') {
+      bg = const Color(0xFF7C3AED);
+      label = 'Super Admin';
+    } else if (r == 'processor' || r == 'seller') {
+      bg = const Color(0xFF1565C0);
+      label = 'Producer Seller';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: bg.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: bg, fontWeight: FontWeight.bold, fontSize: 11),
       ),
     );
   }
